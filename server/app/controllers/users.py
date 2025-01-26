@@ -28,9 +28,9 @@ class UsersController:
             "/callback",
             response_model=AuthenticateResponse,
         )
-        async def exchange_token(code: str, client_id: str, client_secret: str):
+        async def exchange_token(code: str):
             try:
-                token_response = await self.service.exchange_token(code, client_id, client_secret)
+                token_response = await self.service.exchange_token(code=code)
 
                 return RedirectResponse(
                     f"{FRONTEND_BASE_URL}?access_token={token_response.access_token}"

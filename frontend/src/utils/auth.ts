@@ -21,6 +21,7 @@ export async function getAuthTokens({
     authUrl.searchParams.append('client_id', clientId);
     authUrl.searchParams.append('redirect_uri', `${SERVER_BASE_URL}/api/v1/users/callback`);
     authUrl.searchParams.append('scope', 'user');
+    console.log('Auth URL:', authUrl);
     window.location.href = authUrl.toString();
 
     return {

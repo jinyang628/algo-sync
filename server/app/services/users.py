@@ -1,5 +1,6 @@
 import os
 
+import aiohttp
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
@@ -15,12 +16,10 @@ GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
 
 class UsersService:
-    async def exchange_token(
-        self, code: str, client_id: str, client_secret: str
-    ) -> AuthenticateResponse:
+    async def exchange_token(self, code: str) -> AuthenticateResponse:
         data = {
-            "client_id": client_id,
-            "client_secret": client_secret,
+            "client_id": GITHUB_CLIENT_ID,
+            "client_secret": GITHUB_CLIENT_SECRET,
             "code": code,
             "redirect_uri": f"{SERVER_BASE_URL}/api/v1/users/callback",
         }
@@ -56,12 +55,3 @@ class UsersService:
                 status_code=500,
                 detail=f"An unexpected error occurred: {str(e)}",
             )
-
-
-# Example usage:
-# users_service = UsersService()
-# auth_url = await users_service.initiate_github_oauth()
-# print(f"Redirect user to: {auth_url}")
-# After user authorization, handle the callback:
-# access_token = await users_service.handle_github_callback("received_code")
-# print(f"Access Token: {access_token}")
