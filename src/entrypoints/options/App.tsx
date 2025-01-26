@@ -1,14 +1,11 @@
-import { FaGoogle } from 'react-icons/fa';
+import { FaGithub } from 'react-icons/fa';
 
-import { DAY_OPTIONS, TIMEZONE_OPTIONS, TIME_OPTIONS, isValidTime } from '@/constants/calendar';
 import { toast } from '@/hooks/use-toast';
 import { getAuthTokens, isAccessTokenValid, refreshAccessToken } from '@/utils/auth';
 import { CheckCircle } from 'lucide-react';
 import { XCircle } from 'lucide-react';
 
-import IndividualSelectDropdown from '@/components/shared/individual-select-dropdown';
 import Loader from '@/components/shared/loader';
-import MultipleSelectDropdown from '@/components/shared/multiple-select-dropdown';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,17 +14,17 @@ import { Toaster } from '@/components/ui/toaster';
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
 
 export default function App() {
-  const [name, setName] = useState<string>('');
-  const [startTime, setStartTime] = useState<string>('');
-  const [endTime, setEndTime] = useState<string>('');
-  const [preferredDays, setPreferredDays] = useState<string[]>([]);
-  const [timezone, setTimezone] = useState<string>('');
+  const [clientId, setClientId] = useState<string>('');
+  const [clientSecret, setClientSecret] = useState<string>('');
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
 
   useEffect(() => {
     const initializeStates = async () => {
-      browser.storage.sync.get('name').then((result) => {
-        setName(result.name || '');
+      browser.storage.sync.get('clientId').then((result) => {
+        setClientId(result.clientId || '');
+      });
+      browser.storage.sync.get('clientSecret').then((result) => {
+        setClientSecret(result.clientSecret || '');
       });
       try {
         const accessToken: string = await browser.storage.sync
@@ -90,8 +87,8 @@ export default function App() {
   const authenticateSection = (
     <div className="flex items-center justify-center space-x-2">
       <Button className="gap-2" disabled={!clientId} onClick={handleAuthentication}>
-        <FaGoogle className="size-5" />
-        Authenticate with Google
+        <FaGithub className="size-5" />
+        Authenticate with Github
       </Button>
       {authenticationStatus === 'yes' ? (
         <CheckCircle className="size-8 text-green-500" />
@@ -106,22 +103,12 @@ export default function App() {
   const saveButton = (
     <Button
       onClick={() => {
-        browser.storage.sync.set({ name: name });
-        browser.storage.sync.set({ preferredDays: preferredDays });
-        browser.storage.sync.set({ timezone: timezone });
-        if (startTime && endTime) {
-          if (!isValidTime(startTime, endTime)) {
-            toast({
-              title: 'Invalid timings',
-              description: 'Please enter a valid start and end time',
-              duration: 1500,
-            });
-            return;
-          }
-
-          browser.storage.sync.set({ startTime: startTime });
-          browser.storage.sync.set({ endTime: endTime });
-        }
+        browser.storage.sync.set({
+          clientId: clientId,
+        });
+        browser.storage.sync.set({
+          clientSecret: clientSecret,
+        });
 
         toast({
           title: 'Settings saved!',
@@ -138,44 +125,20 @@ export default function App() {
       <Toaster />
       <div className="mx-auto flex max-h-[600px] w-full max-w-[750px] flex-col justify-center space-y-4 p-4">
         <Card className="mx-auto flex w-full max-w-[auto] flex-col justify-center space-y-4 p-4 align-middle">
-          <p className="text-base font-semibold">Your Name:</p>
+          <p className="text-base font-semibold">Github OAuth App Client ID:</p>
           <Input
-            type="text"
-            onChange={(e) => setName(e.target.value)}
-            value={name}
-            placeholder="This will be used to sign off your email reply"
+            type="password"
+            onChange={(e) => setClientId(e.target.value)}
+            value={clientId}
+            placeholder="Enter your Github OAuth App's Client ID"
           />
-          <p className="text-base font-semibold">Preferred Interview Timings:</p>
-          <div className="flex justify-around">
-            <div className="flex w-[40%] justify-center space-x-4">
-              <IndividualSelectDropdown
-                name="Earliest Start Time"
-                items={TIME_OPTIONS}
-                selectedItem={startTime}
-                onSelectItem={(item) => setStartTime(item)}
-              />
-              <p>-</p>
-              <IndividualSelectDropdown
-                name="Latest End Time"
-                items={TIME_OPTIONS}
-                selectedItem={endTime}
-                onSelectItem={(item) => setEndTime(item)}
-              />
-            </div>
-            <MultipleSelectDropdown
-              name="Preferred Days"
-              items={DAY_OPTIONS}
-              selectedItems={preferredDays}
-              onSelectItems={(items) => setPreferredDays(items)}
-              order={DAY_OPTIONS}
-            />
-            <IndividualSelectDropdown
-              name="Timezone"
-              items={TIMEZONE_OPTIONS}
-              selectedItem={timezone}
-              onSelectItem={(item) => setTimezone(item)}
-            />
-          </div>
+          <p className="text-base font-semibold">Github OAuth App Client Secret:</p>
+          <Input
+            type="password"
+            onChange={(e) => setClientSecret(e.target.value)}
+            value={clientSecret}
+            placeholder="Enter your Github OAuth App's Client Secret"
+          />
           {authenticateSection}
           {saveButton}
         </Card>
