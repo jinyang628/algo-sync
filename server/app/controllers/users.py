@@ -28,11 +28,9 @@ class UsersController:
         async def exchange_token(code: str):
             try:
                 token_response: AuthenticateResponse = await self.service.exchange_token(code=code)
-                print(token_response.access_token)
-                print(token_response.refresh_token)
 
                 return RedirectResponse(
-                    f"{FRONTEND_BASE_URL}?access_token={token_response.access_token}?refresh_token={token_response.refresh_token}"
+                    f"{FRONTEND_BASE_URL}?access_token={token_response.access_token}"
                 )
             except HTTPException as e:
                 raise e

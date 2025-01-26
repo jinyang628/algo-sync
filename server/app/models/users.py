@@ -9,4 +9,3 @@ class AuthenticateRequest(BaseModel):
 
 class AuthenticateResponse(BaseModel):
     access_token: str
-    refresh_token: str

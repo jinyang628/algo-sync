@@ -37,10 +37,7 @@ class UsersService:
                         )
 
                     token_data = await response.json()
-                    print("TOKEN DATA")
-                    print(token_data)
                     access_token = token_data.get("access_token")
-                    refresh_token = token_data.get("refresh_token")
 
                     if not access_token:
                         raise HTTPException(
@@ -50,7 +47,6 @@ class UsersService:
 
                     return AuthenticateResponse(
                         access_token=access_token,
-                        refresh_token=refresh_token,
                     )
         except Exception as e:
             raise HTTPException(
