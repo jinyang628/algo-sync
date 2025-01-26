@@ -28,7 +28,6 @@ class UsersController:
                 return await self.service.authenticate(
                     client_id=input.client_id,
                     client_secret=input.client_secret,
-                    redirect_uri=input.redirect_uri,
                 )
             except Exception as e:
                 log.error("Unexpected error in users controller.py: %s", str(e))

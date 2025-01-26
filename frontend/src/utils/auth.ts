@@ -1,7 +1,6 @@
+import { authenticate } from '@/actions/users/authenticate';
+import { authenticateRequestSchema } from '@/types/actions/users/authenticate';
 import { StatusCodes } from 'http-status-codes';
-
-
-import { OAUTH_POPUP_HEIGHT, OAUTH_POPUP_WIDTH } from '@/lib/constants';
 
 interface StoreAuthTokensProps {
   clientId: string;
@@ -21,7 +20,11 @@ export async function getAuthTokens({
     browser.storage.sync.set({ clientId: clientId });
     browser.storage.sync.set({ clientSecret: clientSecret });
 
-    await openOAuthPopup();
+    const authenticateRequest = authenticateRequestSchema.parse({
+      client_id: clientId,
+      client_secret: clientSecret,
+    })
+    await authenticate(authenticateRequest);
 
     return {
       accessToken: '',
@@ -110,22 +113,4 @@ export async function isAccessTokenValid(accessToken: string): Promise<boolean> 
     console.error('Error checking access token validity:', error as Error);
     return false;
   }
-}
-
-async function openOAuthPopup() {
-  const popupUrl = chrome.runtime.getURL('oauth.html');
-  const popupWidth = OAUTH_POPUP_WIDTH;
-  const popupHeight = OAUTH_POPUP_HEIGHT;
-
-  const left = Math.floor((screen.width - popupWidth) / 2);
-  const top = Math.floor((screen.height - popupHeight) / 2);
-
-  await chrome.windows.create({
-    url: popupUrl,
-    type: 'popup',
-    width: popupWidth,
-    height: popupHeight,
-    left,
-    top,
-  });
 }
