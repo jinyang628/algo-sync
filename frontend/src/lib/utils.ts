@@ -28,25 +28,32 @@ export function extractProblemNameFromUrl(url: string): string {
 
 export function extractCodeFromContainer(codeContainer: Element): string {
   // Get all line divs
-  const lineDivs = codeContainer.getElementsByClassName('view-line');
+  const lineDivs = Array.from(codeContainer.querySelectorAll('.view-line'));
+
+  // Sort lines by their top position
+  lineDivs.sort((a, b) => {
+    const aTop = parseInt((a as HTMLElement).style.top) || 0;
+    const bTop = parseInt((b as HTMLElement).style.top) || 0;
+    return aTop - bTop;
+  });
+
   let fullCode = '';
 
-  // Iterate through each line
   for (const lineDiv of lineDivs) {
-    // Get all spans within the line
-    const spans = lineDiv.getElementsByTagName('span');
+    // Get only the leaf node spans that don't contain other spans
+    const spans = Array.from(lineDiv.getElementsByTagName('span')).filter(
+      (span) => !span.getElementsByTagName('span').length,
+    );
     let lineText = '';
 
-    // Extract text from each span
     for (const span of spans) {
-      // Replace &nbsp; with a space
       const text = span.textContent?.replace(/\u00A0/g, ' ') || '';
       lineText += text;
     }
-
-    // Add the line to full code with a newline
+    console.log(lineText);
     fullCode += lineText + '\n';
+    console.log(fullCode);
   }
 
-  return fullCode.trim(); // Remove trailing whitespace
+  return fullCode.trim();
 }

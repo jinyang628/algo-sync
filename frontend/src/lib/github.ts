@@ -18,15 +18,16 @@ export default async function pushToGitHub(
     }
 
     console.log('Initiating push to GitHub...');
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github.v3+json',
+    };
 
     // Step 1: Get the latest commit SHA
     const { data: refData } = await axios.get(
       `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/ref/heads/${BRANCH}`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
+        headers: headers,
       },
     );
     const latestCommitSha = refData.object.sha;
@@ -36,10 +37,7 @@ export default async function pushToGitHub(
     const { data: commitData } = await axios.get(
       `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/commits/${latestCommitSha}`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
+        headers: headers,
       },
     );
     const baseTreeSha = commitData.tree.sha;
@@ -49,10 +47,7 @@ export default async function pushToGitHub(
     const { data: currentTreeData } = await axios.get(
       `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/trees/${baseTreeSha}?recursive=1`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
+        headers: headers,
       },
     );
 
@@ -85,10 +80,7 @@ export default async function pushToGitHub(
         tree,
       },
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
+        headers: headers,
       },
     );
     const newTreeSha = treeData.sha;
@@ -103,29 +95,42 @@ export default async function pushToGitHub(
         parents: [latestCommitSha],
       },
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
+        headers: headers,
       },
     );
     const newCommitSha = commitResponse.sha;
     console.log('New commit SHA:', newCommitSha);
 
     // Step 6: Update the branch reference
-    await axios.patch(
-      `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/refs/heads/${BRANCH}`,
-      {
-        sha: newCommitSha,
-        force: false,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
+    try {
+      // First try without force
+      await axios.patch(
+        `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/refs/heads/${BRANCH}`,
+        {
+          sha: newCommitSha,
+          force: false,
         },
-      },
-    );
+        { headers },
+      );
+    } catch (error: any) {
+      if (
+        error?.response?.status === 422 &&
+        error?.response?.data?.message === 'Update is not a fast forward'
+      ) {
+        console.log('Fast-forward failed, attempting force update...');
+        await axios.patch(
+          `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/refs/heads/${BRANCH}`,
+          {
+            sha: newCommitSha,
+            force: true,
+          },
+          { headers },
+        );
+      } else {
+        // If it's a different error, rethrow it
+        throw error;
+      }
+    }
 
     console.log('Code pushed successfully!');
   } catch (error) {
