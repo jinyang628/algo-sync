@@ -11,12 +11,12 @@ export async function getAccessToken({ clientId }: StoreAuthTokensProps) {
     const authUrl = new URL('https://github.com/login/oauth/authorize');
     authUrl.searchParams.append('client_id', clientId);
     authUrl.searchParams.append('redirect_uri', `${SERVER_BASE_URL}/api/v1/users/callback`);
-    authUrl.searchParams.append('scope', 'user');
+    authUrl.searchParams.append('scope', 'user repo public_repo');
     console.log('Auth URL:', authUrl);
     window.location.href = authUrl.toString();
   } catch (error) {
     console.error('Error getting auth tokens:', error as Error);
-    throw new Error('Failed to authenticate with Google Calendar');
+    throw new Error('Failed to authenticate with Github');
   }
 }
 

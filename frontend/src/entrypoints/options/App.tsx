@@ -69,7 +69,10 @@ export default function App() {
       <Button
         className="gap-2"
         disabled={!clientId}
-        onClick={() => getAccessToken({ clientId: clientId })}
+        onClick={() => {
+          setAuthenticationStatus('loading');
+          getAccessToken({ clientId: clientId });
+        }}
       >
         <FaGithub className="size-5" />
         Authenticate with Github
