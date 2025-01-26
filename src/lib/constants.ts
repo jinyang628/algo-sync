@@ -1,0 +1,1 @@
+export const EXCHANGE_TOKEN_ACTION = 'EXCHANGE_TOKEN';

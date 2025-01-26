@@ -70,7 +70,7 @@ export default function App() {
       const { accessToken, refreshToken } = await getAuthTokens({
         clientId: clientId,
         clientSecret: clientSecret,
-        scopes: ['https://www.googleapis.com/auth/calendar'],
+        scopes: ['user'],
         interactive: true,
       });
       await browser.storage.sync.set({

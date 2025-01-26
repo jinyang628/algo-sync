@@ -7,10 +7,6 @@ export default defineContentScript({
   async main(ctx) {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       switch (request.action) {
-        case EXTRACT_HTML_ACTION:
-          const html = document.documentElement.outerHTML;
-          sendResponse({ html });
-          break;
         default:
           break;
       }

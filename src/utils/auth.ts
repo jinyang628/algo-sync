@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 
-import { logger } from '@/lib/logger';
+import { EXCHANGE_TOKEN_ACTION } from '@/lib/constants';
 
 interface StoreAuthTokensProps {
   clientId: string;
@@ -21,16 +21,14 @@ export async function getAuthTokens({
   interactive,
 }: StoreAuthTokensProps): Promise<StoreAuthTokensResponse> {
   try {
-    const authUrl = new URL('https://accounts.google.com/o/oauth2/auth');
+    const authUrl = new URL('https://github.com/login/oauth/authorize');
+    const redirectUri: string = chrome.identity.getRedirectURL();
     authUrl.searchParams.append('client_id', clientId);
-    authUrl.searchParams.append('response_type', 'code');
-    authUrl.searchParams.append('redirect_uri', chrome.identity.getRedirectURL());
+    authUrl.searchParams.append('redirect_uri', redirectUri);
     authUrl.searchParams.append('scope', scopes.join(' '));
-    authUrl.searchParams.append('access_type', 'offline');
-    authUrl.searchParams.append('prompt', 'consent');
-    logger.info('Auth URL:', authUrl.toString());
+    console.info('Auth URL:', authUrl.toString());
 
-    const responseUrl = await new Promise<string>((resolve, reject) => {
+    const responseUrl: string = await new Promise<string>((resolve, reject) => {
       chrome.identity.launchWebAuthFlow(
         {
           url: authUrl.toString(),
@@ -58,42 +56,50 @@ export async function getAuthTokens({
       throw new Error('No authorization code found in response');
     }
 
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+    chrome.runtime.sendMessage(
+      {
+        action: EXCHANGE_TOKEN_ACTION,
+        code: code,
+        clientId: clientId,
+        clientSecret: clientSecret,
+        redirectUri: redirectUri,
       },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: chrome.identity.getRedirectURL(),
-        grant_type: 'authorization_code',
-      }),
-    });
-
-    if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json().catch(() => null);
-      logger.error('Token exchange failed:', {
-        status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
-        error: errorData,
-      });
-      throw new Error(`Token exchange failed: ${tokenResponse.status}`);
-    }
-
-    const tokens = await tokenResponse.json();
-
-    if (!tokens.access_token || !tokens.refresh_token) {
-      throw new Error('Missing tokens in response');
-    }
+      (response) => {
+        if (response.error) {
+          console.error('Token exchange failed:', response.error);
+        } else {
+          console.log('Access Token:', response.access_token);
+        }
+      },
+    );
 
     return {
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
+      accessToken: '',
+      refreshToken: '',
     };
+
+    // if (!tokenResponse.ok) {
+    //   const errorData = await tokenResponse.json().catch(() => null);
+    //   logger.error('Token exchange failed:', {
+    //     status: tokenResponse.status,
+    //     statusText: tokenResponse.statusText,
+    //     error: errorData,
+    //   });
+    //   throw new Error(`Token exchange failed: ${tokenResponse.status}`);
+    // }
+
+    // const tokens = await tokenResponse.json();
+
+    // if (!tokens.access_token || !tokens.refresh_token) {
+    //   throw new Error('Missing tokens in response');
+    // }
+
+    // return {
+    //   accessToken: tokens.access_token,
+    //   refreshToken: tokens.refresh_token,
+    // };
   } catch (error) {
-    logger.error('Error getting auth tokens:', error as Error);
+    console.error('Error getting auth tokens:', error as Error);
     throw new Error('Failed to authenticate with Google Calendar');
   }
 }
