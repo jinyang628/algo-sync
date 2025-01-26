@@ -24,10 +24,7 @@ class UsersController:
     def setup_routes(self):
         router = self.router
 
-        @router.get(
-            "/callback",
-            response_model=AuthenticateResponse,
-        )
+        @router.get("/callback")
         async def exchange_token(code: str):
             try:
                 token_response = await self.service.exchange_token(code=code)
