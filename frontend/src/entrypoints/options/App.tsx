@@ -1,7 +1,7 @@
 import { FaGithub } from 'react-icons/fa';
 
 import { toast } from '@/hooks/use-toast';
-import { getAuthTokens, isAccessTokenValid, refreshAccessToken } from '@/utils/auth';
+import { getAccessToken, isAccessTokenValid } from '@/utils/auth';
 import { CheckCircle } from 'lucide-react';
 import { XCircle } from 'lucide-react';
 
@@ -19,25 +19,6 @@ export default function App() {
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
 
   useEffect(() => {
-    const handleGitHubCallback = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token');
-      console.log('Access Token:', accessToken);
-      console.log('Refresh Token:', refreshToken);
-
-      if (accessToken && refreshToken) {
-        chrome.storage.sync.set({ accessToken: accessToken }, () => {
-          console.log('Access token saved.');
-        });
-        chrome.storage.sync.set({ refreshToken: refreshToken }, () => {
-          console.log('Refresh token saved.');
-        });
-        // Redirect the user to the main app page
-        window.location.href = '/';
-      }
-    };
-
     const initializeStates = async () => {
       browser.storage.sync.get('clientId').then((result) => {
         setClientId(result.clientId || '');
@@ -51,29 +32,11 @@ export default function App() {
           .then((result) => result.accessToken)
           .catch(() => '');
 
-        const isValid: boolean = await isAccessTokenValid(accessToken);
-        if (isValid) {
+        if (await isAccessTokenValid(accessToken)) {
           setAuthenticationStatus('yes');
-          return;
+        } else {
+          setAuthenticationStatus('no');
         }
-
-        await browser.storage.sync.set({
-          accessToken: await refreshAccessToken({
-            refreshToken: await browser.storage.sync
-              .get('refreshToken')
-              .then((result) => result.refreshToken)
-              .catch(() => ''),
-            clientId: await browser.storage.sync
-              .get('clientId')
-              .then((result) => result.clientId)
-              .catch(() => ''),
-            clientSecret: await browser.storage.sync
-              .get('clientSecret')
-              .then((result) => result.clientSecret)
-              .catch(() => ''),
-          }),
-        });
-        setAuthenticationStatus('yes');
       } catch (error: unknown) {
         console.error(error);
         setAuthenticationStatus('no');
@@ -82,29 +45,31 @@ export default function App() {
 
     setAuthenticationStatus('loading');
     initializeStates();
+  }, []);
+
+  useEffect(() => {
+    const handleGitHubCallback = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+
+      if (!accessToken) {
+        return;
+      }
+      browser.storage.sync.set({ accessToken }).then(() => {
+        console.log('Access token saved.');
+      });
+      window.location.href = '/options.html';
+    };
     handleGitHubCallback();
   }, []);
 
-  const handleAuthentication = async () => {
-    try {
-      const { accessToken, refreshToken } = await getAuthTokens({
-        clientId: clientId,
-        clientSecret: clientSecret,
-      });
-      await browser.storage.sync.set({
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-      });
-      setAuthenticationStatus('yes');
-    } catch (error) {
-      console.error(error);
-      setAuthenticationStatus('error');
-    }
-  };
-
   const authenticateSection = (
     <div className="flex items-center justify-center space-x-2">
-      <Button className="gap-2" disabled={!clientId} onClick={handleAuthentication}>
+      <Button
+        className="gap-2"
+        disabled={!clientId}
+        onClick={() => getAccessToken({ clientId: clientId })}
+      >
         <FaGithub className="size-5" />
         Authenticate with Github
       </Button>
