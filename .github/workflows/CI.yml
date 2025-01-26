@@ -1,0 +1,96 @@
+name: CI checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  file-changes:
+    name: Check location of file changes
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+            frontend:
+              - 'frontend/**'
+
+  server-CI:
+    needs: file-changes
+    if: ${{ needs.file-changes.outputs.server == 'true' }}
+    name: server-CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.12.1
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.1"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Install dependencies
+        working-directory: ./server
+        run: |
+          poetry install --no-interaction --no-root
+          poetry run playwright install
+          poetry run playwright install-deps
+
+    #   - name: Run pytest
+    #     working-directory: ./server
+    #     run: |
+    #       export PYTHONPATH=$PYTHONPATH:$(pwd)
+    #       poetry run pytest
+
+      - name: Run isort
+        working-directory: ./server
+        run: |
+          poetry run isort --check-only --diff .
+
+      - name: Run black
+        working-directory: ./server
+        run: |
+          poetry run black --check --diff .
+
+  frontend-CI:
+    needs: file-changes
+    if: ${{ needs.file-changes.outputs.frontend == 'true' }}
+    name: frontend-CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        working-directory: ./frontend
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install
+
+      - name: Run Prettier
+        working-directory: ./frontend
+        run: npx prettier --check .
+
+      - name: Run build
+        working-directory: ./frontend
+        run: pnpm build

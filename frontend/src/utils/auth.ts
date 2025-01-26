@@ -1,6 +1,7 @@
 import { authenticate } from '@/actions/users/authenticate';
-import { authenticateRequestSchema } from '@/types/actions/users/authenticate';
 import { StatusCodes } from 'http-status-codes';
+
+import { authenticateRequestSchema } from '@/types/actions/users/authenticate';
 
 interface StoreAuthTokensProps {
   clientId: string;
@@ -23,7 +24,7 @@ export async function getAuthTokens({
     const authenticateRequest = authenticateRequestSchema.parse({
       client_id: clientId,
       client_secret: clientSecret,
-    })
+    });
     await authenticate(authenticateRequest);
 
     return {
