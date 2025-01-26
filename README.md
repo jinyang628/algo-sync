@@ -1,3 +1,3 @@
-# lc-sync
+# algo-sync
 
-syncs my algo practice on external sites
+I want my grass patch to be greener even when I do leetcode!
