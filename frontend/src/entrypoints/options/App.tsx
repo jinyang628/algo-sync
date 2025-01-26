@@ -1,7 +1,6 @@
 import { FaGithub } from 'react-icons/fa';
 
 import { toast } from '@/hooks/use-toast';
-import { getAccessToken, isAccessTokenValid } from '@/utils/auth';
 import { CheckCircle } from 'lucide-react';
 import { XCircle } from 'lucide-react';
 
@@ -10,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/toaster';
+
+import { getAccessToken, isAccessTokenValid } from '@/lib/auth';
 
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
 
