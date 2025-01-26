@@ -1,7 +1,6 @@
-import { authenticate } from '@/actions/users/authenticate';
 import { StatusCodes } from 'http-status-codes';
 
-import { authenticateRequestSchema } from '@/types/actions/users/authenticate';
+import { SERVER_BASE_URL } from '@/lib/constants';
 
 interface StoreAuthTokensProps {
   clientId: string;
@@ -18,14 +17,11 @@ export async function getAuthTokens({
   clientSecret,
 }: StoreAuthTokensProps): Promise<StoreAuthTokensResponse> {
   try {
-    browser.storage.sync.set({ clientId: clientId });
-    browser.storage.sync.set({ clientSecret: clientSecret });
-
-    const authenticateRequest = authenticateRequestSchema.parse({
-      client_id: clientId,
-      client_secret: clientSecret,
-    });
-    await authenticate(authenticateRequest);
+    const authUrl = new URL('https://github.com/login/oauth/authorize');
+    authUrl.searchParams.append('client_id', clientId);
+    authUrl.searchParams.append('redirect_uri', `${SERVER_BASE_URL}/api/v1/users/callback`);
+    authUrl.searchParams.append('scope', 'user');
+    window.location.href = authUrl.toString();
 
     return {
       accessToken: '',
@@ -56,6 +52,21 @@ export async function getAuthTokens({
     console.error('Error getting auth tokens:', error as Error);
     throw new Error('Failed to authenticate with Google Calendar');
   }
+}
+
+export function openOAuthPopup() {
+  const popupUrl = chrome.runtime.getURL('oauth.html');
+  const popupWidth = 700;
+  const popupHeight = 700;
+
+  const left = Math.floor((screen.width - popupWidth) / 2);
+  const top = Math.floor((screen.height - popupHeight) / 2);
+
+  window.open(
+    popupUrl,
+    'GitHub OAuth',
+    `width=${popupWidth},height=${popupHeight},left=${left},top=${top}`,
+  );
 }
 
 interface RefreshAccessTokenProps {

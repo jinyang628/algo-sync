@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const authenticateRequestSchema = z.object({
   client_id: z.string(),
   client_secret: z.string(),
+  code: z.string(),
 });
 
 export type AuthenticateRequest = z.infer<typeof authenticateRequestSchema>;

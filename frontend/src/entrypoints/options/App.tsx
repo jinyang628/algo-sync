@@ -19,6 +19,25 @@ export default function App() {
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
 
   useEffect(() => {
+    const handleGitHubCallback = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
+      console.log('Access Token:', accessToken);
+      console.log('Refresh Token:', refreshToken);
+
+      if (accessToken && refreshToken) {
+        chrome.storage.sync.set({ accessToken: accessToken }, () => {
+          console.log('Access token saved.');
+        });
+        chrome.storage.sync.set({ refreshToken: refreshToken }, () => {
+          console.log('Refresh token saved.');
+        });
+        // Redirect the user to the main app page
+        window.location.href = '/';
+      }
+    };
+
     const initializeStates = async () => {
       browser.storage.sync.get('clientId').then((result) => {
         setClientId(result.clientId || '');
@@ -63,6 +82,7 @@ export default function App() {
 
     setAuthenticationStatus('loading');
     initializeStates();
+    handleGitHubCallback();
   }, []);
 
   const handleAuthentication = async () => {
