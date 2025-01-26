@@ -33,5 +33,5 @@ isort . # Sort Python imports
 To spin up the server, run the following command at the `server` directory:
 
 ```bash
-uvicorn app.api.main:app --reload --host 0.0.0.0 --port 8080 --env-file .env
+uvicorn app.api.main:app --reload --host 0.0.0.0 --port 8080
 ```

@@ -11,11 +11,23 @@ dependencies = [
     "fastapi (>=0.115.7,<0.116.0)",
     "uvicorn (>=0.34.0,<0.35.0)",
     "python-dotenv (>=1.0.1,<2.0.0)",
-    "httpx (>=0.28.1,<0.29.0)"
+    "httpx (>=0.28.1,<0.29.0)",
+    "black (>=24.10.0,<25.0.0)",
+    "isort (>=5.13.2,<6.0.0)"
 ]
 
 [tool.poetry]
 package-mode = false
+
+[tool.black]
+line-length = 100
+
+[tool.isort]
+line_length = 100
+wrap_length = 100
+multi_line_output = 3
+profile = "black"
+include_trailing_comma = true
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
