@@ -1,12 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 
-import { EXCHANGE_TOKEN_ACTION } from '@/lib/constants';
+
+import { OAUTH_POPUP_HEIGHT, OAUTH_POPUP_WIDTH } from '@/lib/constants';
 
 interface StoreAuthTokensProps {
   clientId: string;
   clientSecret: string;
-  scopes: string[];
-  interactive: boolean;
 }
 
 interface StoreAuthTokensResponse {
@@ -17,61 +16,12 @@ interface StoreAuthTokensResponse {
 export async function getAuthTokens({
   clientId,
   clientSecret,
-  scopes,
-  interactive,
 }: StoreAuthTokensProps): Promise<StoreAuthTokensResponse> {
   try {
-    const authUrl = new URL('https://github.com/login/oauth/authorize');
-    const redirectUri: string = chrome.identity.getRedirectURL();
-    authUrl.searchParams.append('client_id', clientId);
-    authUrl.searchParams.append('redirect_uri', redirectUri);
-    authUrl.searchParams.append('scope', scopes.join(' '));
-    console.info('Auth URL:', authUrl.toString());
+    browser.storage.sync.set({ clientId: clientId });
+    browser.storage.sync.set({ clientSecret: clientSecret });
 
-    const responseUrl: string = await new Promise<string>((resolve, reject) => {
-      chrome.identity.launchWebAuthFlow(
-        {
-          url: authUrl.toString(),
-          interactive: interactive,
-        },
-        (responseUrl) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-            return;
-          }
-          if (!responseUrl) {
-            reject(new Error('No response URL'));
-            return;
-          }
-          resolve(responseUrl);
-        },
-      );
-    });
-
-    // Extract the authorization code
-    const urlParams = new URLSearchParams(new URL(responseUrl).search);
-    const code = urlParams.get('code');
-
-    if (!code) {
-      throw new Error('No authorization code found in response');
-    }
-
-    chrome.runtime.sendMessage(
-      {
-        action: EXCHANGE_TOKEN_ACTION,
-        code: code,
-        clientId: clientId,
-        clientSecret: clientSecret,
-        redirectUri: redirectUri,
-      },
-      (response) => {
-        if (response.error) {
-          console.error('Token exchange failed:', response.error);
-        } else {
-          console.log('Access Token:', response.access_token);
-        }
-      },
-    );
+    await openOAuthPopup();
 
     return {
       accessToken: '',
@@ -157,7 +107,25 @@ export async function isAccessTokenValid(accessToken: string): Promise<boolean> 
     );
     return response.status === StatusCodes.OK;
   } catch (error: unknown) {
-    logger.error('Error checking access token validity:', error as Error);
+    console.error('Error checking access token validity:', error as Error);
     return false;
   }
+}
+
+async function openOAuthPopup() {
+  const popupUrl = chrome.runtime.getURL('oauth.html');
+  const popupWidth = OAUTH_POPUP_WIDTH;
+  const popupHeight = OAUTH_POPUP_HEIGHT;
+
+  const left = Math.floor((screen.width - popupWidth) / 2);
+  const top = Math.floor((screen.height - popupHeight) / 2);
+
+  await chrome.windows.create({
+    url: popupUrl,
+    type: 'popup',
+    width: popupWidth,
+    height: popupHeight,
+    left,
+    top,
+  });
 }

@@ -1,1 +1,3 @@
 export const EXCHANGE_TOKEN_ACTION = 'EXCHANGE_TOKEN';
+export const OAUTH_POPUP_HEIGHT = 1000;
+export const OAUTH_POPUP_WIDTH = 1000;

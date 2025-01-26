@@ -70,8 +70,6 @@ export default function App() {
       const { accessToken, refreshToken } = await getAuthTokens({
         clientId: clientId,
         clientSecret: clientSecret,
-        scopes: ['user'],
-        interactive: true,
       });
       await browser.storage.sync.set({
         accessToken: accessToken,

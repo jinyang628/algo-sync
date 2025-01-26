@@ -1,5 +1,3 @@
-import { EXTRACT_HTML_ACTION } from '@/constants/browser';
-
 import '@/styles/globals.css';
 
 export default defineContentScript({
