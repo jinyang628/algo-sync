@@ -1,5 +1,11 @@
+import { Language as LanguageSuffix } from '@/types/languages';
+
 import pushToGitHub from '@/lib/github';
-import { extractCodeFromContainer, extractProblemNameFromUrl } from '@/lib/utils';
+import {
+  extractCodeFromContainer,
+  extractProblemNameFromUrl,
+  identifyLanguage as identifyLanguageSuffix,
+} from '@/lib/utils';
 
 import '@/styles/globals.css';
 
@@ -23,11 +29,18 @@ export default defineContentScript({
       if (isSubmissionAccepted()) {
         observer.disconnect();
         const problemName: string = extractProblemNameFromUrl(window.location.href);
-        const codeContainer = document.getElementsByClassName(
-          'view-lines monaco-mouse-cursor-text',
-        )[0];
+        const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
+        if (!codeContainer) {
+          console.error('Code container not found');
+          return;
+        }
         const code: string = extractCodeFromContainer(codeContainer);
-        await pushToGitHub(problemName, code, 'Another day another leetcode submission');
+        const languageSuffix: LanguageSuffix = identifyLanguageSuffix(codeContainer);
+        await pushToGitHub(
+          `${problemName}.${languageSuffix}`,
+          code,
+          'Another day another leetcode submission',
+        );
       }
     });
     // Find and watch targetDiv after submit button is clicked
