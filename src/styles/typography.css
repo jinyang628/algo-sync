@@ -1,0 +1,260 @@
+@layer components {
+  .prose {
+    @apply text-16 text-gray-20 dark:text-gray-80 leading-normal;
+
+    @apply prose-headings:font-medium prose-headings:text-black prose-headings:dark:text-white;
+
+    @apply prose-h2:mb-4.5 prose-h2:mt-12 prose-h2:scroll-mt-8 prose-h2:text-24 prose-h2:leading-snug prose-h2:tracking-tighter;
+
+    @apply prose-h3:mb-4.5 prose-h3:mt-12 prose-h3:scroll-mt-7 prose-h3:text-18 prose-h3:tracking-tight;
+
+    @apply prose-h4:mb-4.5 prose-h4:text-16 prose-h4:tracking-tight prose-h4:text-gray-12;
+
+    @apply prose-p:my-4.5 prose-p:tracking-tight lg:prose-p:my-3 md:prose-p:my-2.5;
+
+    @apply prose-a:break-words prose-a:font-normal prose-a:text-blue prose-a:no-underline prose-a:transition-colors prose-a:duration-300 hover:prose-a:text-[#0087CC];
+
+    @apply prose-code:font-mono prose-code:font-light prose-code:leading-snug;
+
+    @apply prose-ol:flex prose-ol:flex-col prose-ul:flex prose-ul:flex-col;
+
+    @apply prose-ul:my-4 prose-ul:gap-y-3 prose-ul:pl-3.5 lg:prose-ul:my-6 md:prose-ul:my-5 md:prose-ul:gap-y-1.5 sm:prose-ul:pl-[23px];
+
+    @apply prose-ol:my-4 prose-ol:gap-y-3 prose-ol:pl-5 lg:prose-ol:my-6 lg:prose-ol:gap-y-3 md:prose-ol:my-5 md:prose-ol:gap-y-2.5 sm:prose-ol:pl-5;
+
+    @apply prose-li:m-0 prose-li:tracking-tight;
+
+    @apply prose-strong:font-medium prose-strong:text-gray-8 prose-strong:dark:text-gray-94;
+
+    @apply prose-figure:my-4.5;
+
+    @apply prose-hr:my-9 prose-hr:border-gray-90 prose-hr:dark:border-gray-20;
+
+    @apply prose-blockquote:border-gray-90 prose-blockquote:dark:border-gray-60 prose-blockquote:dark:text-gray-80;
+
+    h2 + p {
+      @apply mt-0;
+    }
+
+    h2 + h3 {
+      @apply mt-0;
+    }
+
+    > * {
+      &:first-child {
+        @apply mt-0;
+      }
+
+      &:last-child {
+        @apply mb-0;
+      }
+    }
+
+    ol ol,
+    ul ol {
+      @apply mb-0 mt-4 md:mt-2.5 lg:mt-3;
+    }
+
+    ol ul,
+    ul ul {
+      @apply mb-0 mt-2 md:mt-1.5;
+    }
+
+    ol strong,
+    ul strong {
+      @apply font-medium;
+    }
+
+    ul {
+      li {
+        @apply md:pl-0.5;
+
+        &::marker {
+          @apply text-gray-40 dark:text-gray-60;
+        }
+      }
+    }
+
+    ol {
+      li::marker {
+        @apply text-gray-20 dark:text-gray-80 font-medium;
+      }
+    }
+
+    li {
+      > * {
+        &:first-child {
+          @apply mt-0;
+        }
+
+        &:last-child {
+          @apply mb-0;
+        }
+      }
+    }
+
+    figure > figcaption {
+      + div pre {
+        @apply rounded-t-none;
+      }
+
+      ~ button {
+        @apply right-4 top-12;
+      }
+    }
+
+    pre {
+      @apply border-gray-90 dark:border-gray-20 overflow-x-auto rounded-md border py-4 leading-normal;
+    }
+
+    :not(pre) {
+      > code {
+        @apply border-gray-80 text-14 text-gray-12 dark:border-gray-40 dark:text-gray-80 ml-1 mr-[3px] rounded-md border bg-[#E9EAEC] px-[5px] font-normal tracking-tight dark:bg-[#E3E4E8]/25;
+
+        &::before,
+        &::after {
+          @apply hidden;
+        }
+      }
+
+      table {
+        code {
+          @apply text-13 whitespace-nowrap px-1 py-0.5;
+        }
+      }
+    }
+  }
+
+  p,
+  li {
+    > code:first-child {
+      @apply ml-0;
+    }
+  }
+
+  summary {
+    @apply cursor-pointer font-medium leading-snug;
+
+    &::marker {
+      @apply mr-1.5;
+    }
+  }
+
+  details {
+    @apply my-7;
+  }
+
+  .tabs-content,
+  .admonition-content {
+    > * {
+      &:first-child:not(h2) {
+        @apply mt-0;
+      }
+
+      &:last-child {
+        @apply mb-0;
+      }
+    }
+
+    a {
+      @apply font-medium underline decoration-1 underline-offset-1 duration-200 ease-in-out;
+    }
+
+    pre {
+      @apply dark:!bg-gray-8 overflow-x-auto rounded !bg-white;
+    }
+
+    :not(pre) > code {
+      @apply text-14 border tracking-normal;
+    }
+  }
+  .tabs-content {
+    .code-block {
+      @apply mt-3.5;
+    }
+
+    p {
+      @apply my-2;
+    }
+  }
+
+  .admonition-content {
+    > * {
+      @apply my-2.5;
+    }
+
+    p {
+      @apply text-15 my-2.5 leading-relaxed tracking-tight;
+    }
+
+    &.admonition-content-info {
+      a {
+        @apply text-[#3D748F] decoration-[#5CADD6] hover:text-[#337799] hover:decoration-[#3DB8F5] dark:text-[#98BBCD] dark:decoration-[#94BDD1] dark:hover:text-[#90BED5] dark:hover:decoration-[#7DC4E8];
+      }
+
+      :not(pre) > code {
+        @apply border-[#5E9CBA] bg-[#8CBFD9]/25 dark:border-[#668899] dark:bg-[#8CBFD9] dark:bg-opacity-20 dark:text-[#B3D4E5];
+      }
+    }
+
+    &.admonition-content-tip {
+      a {
+        @apply text-[#50743E] decoration-[#6ABF40] hover:text-[#4A862D] hover:decoration-[#52A329] dark:text-[#ABC99C] dark:decoration-[#C7DBBD] dark:hover:text-[#C3E8B0] dark:hover:decoration-[#C4E5B3];
+      }
+
+      :not(pre) > code {
+        @apply border-[#50743E] bg-[#41A112]/20 dark:border-[#779966] dark:bg-[#97D279] dark:bg-opacity-20 dark:text-[#C5E0B8];
+      }
+    }
+
+    &.admonition-content-note {
+      a {
+        @apply text-[#475285] decoration-[#9CA3C9] hover:text-[#5966A6] hover:decoration-[#7A85B8] dark:text-[#ABADBA] dark:decoration-[#ACB2D2] dark:hover:text-[#C7C9D1] dark:hover:decoration-[#BDC2DB];
+      }
+
+      :not(pre) > code {
+        @apply border-gray-50 bg-[#73778C]/15 dark:border-[#8A94A8] dark:bg-[#C7CAD1] dark:bg-opacity-20 dark:text-[#F0F1F5];
+      }
+    }
+
+    &.admonition-content-caution {
+      a {
+        @apply text-[#8A6042] decoration-[#EB8947] hover:text-[#B97646] hover:decoration-[#FF8533] dark:text-[#D1BD94] dark:decoration-[#DDAA88] dark:hover:text-[#E6D5B2] dark:hover:decoration-[#ECA779];
+      }
+
+      :not(pre) > code {
+        @apply border-[#958350] bg-[#E6AF19]/20 dark:border-[#958350] dark:bg-[#EDC75E] dark:bg-opacity-20 dark:text-[#F4E2BE];
+      }
+    }
+
+    &.admonition-content-warning {
+      a {
+        @apply text-[#855247] decoration-[#D6725C] hover:text-[#8F4B3D] hover:decoration-[#F55E3D] dark:text-[#CD9B98] dark:decoration-[#DFA4A0] dark:hover:text-[#D59590] dark:hover:decoration-[#EB6447];
+      }
+
+      :not(pre) > code {
+        @apply border-[#D28179] bg-[#F08075]/20 dark:border-[#996A66] dark:bg-[#D9938C] dark:bg-opacity-20 dark:text-[#E5B7B3];
+      }
+    }
+
+    ul {
+      @apply flex list-disc flex-col gap-y-2 pl-5 sm:pl-[23px] md:my-5 md:gap-y-1.5;
+    }
+
+    ul {
+      li {
+        @apply md:pl-0.5;
+
+        &::marker {
+          @apply text-[#0087CC];
+        }
+      }
+    }
+
+    ol {
+      li::marker {
+        @apply font-medium text-black;
+      }
+    }
+  }
+}

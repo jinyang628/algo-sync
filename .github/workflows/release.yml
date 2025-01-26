@@ -1,0 +1,42 @@
+name: Build and Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Release package
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run build
+        run: pnpm build
+
+      - name: Create Chrome Extension Package
+        run: zip -r interview-scheduler-${{ github.ref_name }}.zip dist
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
+      - name: Create GitHub Release
+        run: gh release create "${{ github.ref_name }}" interview-scheduler-${{ github.ref_name }}.zip --title "${{ github.ref_name }}"
