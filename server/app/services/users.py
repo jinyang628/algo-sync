@@ -37,6 +37,8 @@ class UsersService:
                         )
 
                     token_data = await response.json()
+                    print("TOKEN DATA")
+                    print(token_data)
                     access_token = token_data.get("access_token")
                     refresh_token = token_data.get("refresh_token")
 
