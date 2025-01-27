@@ -49,6 +49,7 @@ export default defineContentScript({
       console.error('Submit button not found.');
       return;
     }
+    console.log('Listening for DOM changes...')
     submitButton.addEventListener('click', () => {
       console.log('Submit clicked, watching for DOM changes...');
       observer.observe(document.body, {
