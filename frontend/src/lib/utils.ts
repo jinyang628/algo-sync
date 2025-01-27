@@ -74,7 +74,7 @@ export function extractCodeFromContainer(codeContainer: Element): string {
 
   // Add the last line if it exists
   if (currentLine) {
-    fullCode += currentLine.trim() + '\n';
+    fullCode += currentLine;
   }
 
   return fullCode.trim();
