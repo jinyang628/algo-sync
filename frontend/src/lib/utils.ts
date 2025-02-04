@@ -26,6 +26,8 @@ export function identifyLanguage(codeContainer: Element): Language {
       return languageEnum.Values.py;
     case 'java':
       return languageEnum.Values.java;
+    case 'sql':
+      return languageEnum.Values.sql;
     default:
       throw new Error(`Unsupported language: ${language}`);
   }
