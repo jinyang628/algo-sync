@@ -17,6 +17,7 @@ type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
 export default function App() {
   const [clientId, setClientId] = useState<string>('');
   const [clientSecret, setClientSecret] = useState<string>('');
+  const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
   const authenticationIcon = (status: AuthenticationStatus) => {
     switch (status) {
@@ -39,6 +40,9 @@ export default function App() {
       });
       browser.storage.sync.get('clientSecret').then((result) => {
         setClientSecret(result.clientSecret || '');
+      });
+      browser.storage.sync.get('openaiApiKey').then((result) => {
+        setOpenaiApiKey(result.openaiApiKey || '');
       });
       try {
         const accessToken: string = await browser.storage.sync
@@ -103,7 +107,9 @@ export default function App() {
         browser.storage.sync.set({
           clientSecret: clientSecret,
         });
-
+        browser.storage.sync.set({
+          openaiApiKey: openaiApiKey,
+        });
         toast({
           title: 'Settings saved!',
           duration: 1500,
@@ -132,6 +138,13 @@ export default function App() {
             onChange={(e) => setClientSecret(e.target.value)}
             value={clientSecret}
             placeholder="Enter your Github OAuth App's Client Secret"
+          />
+          <p className="text-base font-semibold">OpenAI API Key:</p>
+          <Input
+            type="password"
+            onChange={(e) => setOpenaiApiKey(e.target.value)}
+            value={openaiApiKey}
+            placeholder="Enter your OpenAI API Key"
           />
           {authenticateSection}
           {saveButton}

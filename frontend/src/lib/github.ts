@@ -4,6 +4,10 @@ import { BRANCH, REPO_NAME, REPO_OWNER } from '@/lib/constants';
 
 const GITHUB_API_URL = 'https://api.github.com';
 
+interface TreeItem {
+  path: string;
+  type: string;
+}
 export default async function pushToGitHub(
   fileName: string,
   fileContent: string,
@@ -53,7 +57,7 @@ export default async function pushToGitHub(
 
     // Check if the file already exists in the current tree
     const existingFile = currentTreeData.tree.find(
-      (item: any) => item.path === fileName && item.type === 'blob',
+      (item: TreeItem) => item.path === fileName && item.type === 'blob',
     );
 
     // Step 4: Create a new tree

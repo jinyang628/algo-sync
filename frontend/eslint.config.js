@@ -20,6 +20,7 @@ export default [
       'no-shadow': 'error',
       'no-nested-ternary': 'error',
       'newline-before-return': 'error',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   {
