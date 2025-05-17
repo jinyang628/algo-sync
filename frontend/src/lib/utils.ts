@@ -36,13 +36,13 @@ export function identifyLanguage(codeContainer: Element): Language {
 export function extractProblemNameFromUrl(url: string): string {
   // Extract the pathname from the URL
   const pathname = new URL(url).pathname;
-
   // Use a regular expression to extract the text between `/problems/` and `/submissions/`
-  const match = pathname.match(/\/problems\/([^\/]+)\/submissions\//);
+  const match = pathname.match(/problems\/([^/]+)\/submissions\//);
 
   if (!match || !match[1]) {
     throw new Error('Problem name not found in the URL');
   }
+
   return match[1];
 }
 

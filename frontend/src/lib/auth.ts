@@ -32,6 +32,7 @@ export async function isAccessTokenValid(accessToken: string): Promise<boolean> 
     return response.status === StatusCodes.OK;
   } catch (error: unknown) {
     console.error('Error checking access token validity:', error as Error);
+
     return false;
   }
 }

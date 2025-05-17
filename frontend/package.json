@@ -58,6 +58,8 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.27.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.0",
     "@types/chrome": "^0.0.280",
     "@types/firefox-webext-browser": "^120.0.4",
@@ -69,7 +71,11 @@
     "@wxt-dev/module-react": "^1.1.1",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
+    "eslint-config-next": "^15.3.2",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",

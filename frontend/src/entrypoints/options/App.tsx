@@ -18,6 +18,19 @@ export default function App() {
   const [clientId, setClientId] = useState<string>('');
   const [clientSecret, setClientSecret] = useState<string>('');
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
+  const authenticationIcon = (status: AuthenticationStatus) => {
+    switch (status) {
+      case 'yes':
+        return <CheckCircle className="size-8 text-green-500" />;
+      case 'no':
+        return <XCircle className="size-8 text-red-500" />;
+      case 'loading':
+        return <Loader isLoading={true} />;
+      case 'error':
+        return <XCircle className="size-8 text-red-500" />;
+      default:
+    }
+  };
 
   useEffect(() => {
     const initializeStates = async () => {
@@ -77,13 +90,7 @@ export default function App() {
         <FaGithub className="size-5" />
         Authenticate with Github
       </Button>
-      {authenticationStatus === 'yes' ? (
-        <CheckCircle className="size-8 text-green-500" />
-      ) : authenticationStatus === 'no' || authenticationStatus === 'error' ? (
-        <XCircle className="size-8 text-red-500" />
-      ) : authenticationStatus === 'loading' ? (
-        <Loader isLoading={true} />
-      ) : null}
+      {authenticationIcon(authenticationStatus)}
     </div>
   );
 

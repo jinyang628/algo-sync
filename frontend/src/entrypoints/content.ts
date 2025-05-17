@@ -14,24 +14,27 @@ function isSubmissionAccepted(): boolean {
 
   if (!resultElement) {
     console.error('Submission result element not found.');
+
     return false;
   }
   console.log('Submission result element found!');
+
   return true;
 }
 
 export default defineContentScript({
   matches: ['*://leetcode.com/*'],
 
-  async main(ctx) {
+  async main() {
     // Create mutation observer to watch for DOM changes
-    const observer = new MutationObserver(async (mutations) => {
+    const observer = new MutationObserver(async () => {
       if (isSubmissionAccepted()) {
         observer.disconnect();
         const problemName: string = extractProblemNameFromUrl(window.location.href);
         const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
         if (!codeContainer) {
           console.error('Code container not found');
+
           return;
         }
         const code: string = extractCodeFromContainer(codeContainer);
@@ -47,9 +50,10 @@ export default defineContentScript({
     const submitButton = document.querySelector('[data-e2e-locator="console-submit-button"]');
     if (!submitButton) {
       console.error('Submit button not found.');
+
       return;
     }
-    console.log('Listening for DOM changes...')
+    console.log('Listening for DOM changes...');
     submitButton.addEventListener('click', () => {
       console.log('Submit clicked, watching for DOM changes...');
       observer.observe(document.body, {
@@ -57,7 +61,7 @@ export default defineContentScript({
         subtree: true,
       });
     });
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((request) => {
       switch (request.action) {
         default:
           break;
