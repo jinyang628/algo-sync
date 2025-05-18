@@ -98,3 +98,10 @@ export function fileToBase64(file: File): Promise<string> {
     reader.onerror = (error) => reject(error);
   });
 }
+
+export function convertSecondsToTimer(seconds: number): string {
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  
+return `${m}:${s}`;
+}

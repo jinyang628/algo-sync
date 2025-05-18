@@ -4,6 +4,8 @@ import { Mic, MicOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
+import { convertSecondsToTimer } from '@/lib/utils';
+
 interface VoiceRecorderProps {
   onRecordingComplete: (audioFile: File) => void;
 }
@@ -22,9 +24,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
     }
   }, []);
 
-  // Memoized handler for stop event
   const handleStop = useCallback(() => {
-    // Clear timer
     if (intervalRef.current) {
       clearInterval(intervalRef.current as number);
       intervalRef.current = 0;
@@ -87,9 +87,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
       setTimer('00:00');
       intervalRef.current = setInterval(() => {
         seconds++;
-        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const s = String(seconds % 60).padStart(2, '0');
-        setTimer(`${m}:${s}`);
+        setTimer(convertSecondsToTimer(seconds));
       }, 1000);
     } catch (err: any) {
       setIsRecording(false);
@@ -144,9 +142,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
       >
         {isRecording ? <MicOff /> : <Mic />}
       </Button>
-      <div className="text-center text-sm">
-        {isRecording ? `Recording… ${timer}` : 'Click to start recording'}
-      </div>
+      <div className="text-center text-sm">{isRecording ? timer : 'Click to start recording'}</div>
     </div>
   );
 }
