@@ -1,7 +1,11 @@
 import { Language as LanguageSuffix } from '@/types/languages';
 
 import pushToGitHub from '@/lib/github';
-import { injectCustomScript } from '@/lib/inject';
+import {
+  ALGO_SYNC_AUDIO_DATA_TYPE,
+  ALGO_SYNC_INJECTED_SCRIPT_SRC_NAME,
+  injectCustomScript,
+} from '@/lib/inject';
 import {
   extractCodeFromContainer,
   extractProblemNameFromUrl,
@@ -28,6 +32,44 @@ export default defineContentScript({
 
   async main() {
     await injectCustomScript('/injected.js', { keepInDom: true });
+
+    window.addEventListener(
+      'message',
+      (event) => {
+        if (event.source !== window) {
+          return;
+        }
+
+        if (
+          event.data.type &&
+          event.data.type === ALGO_SYNC_AUDIO_DATA_TYPE &&
+          event.data.source === ALGO_SYNC_INJECTED_SCRIPT_SRC_NAME
+        ) {
+          // Now, use chrome.runtime.sendMessage to send to background/popup
+          chrome.runtime.sendMessage(
+            {
+              action: 'recordingComplete', // This is the action your background/popup listens for
+              audioDataUrl: event.data.payload.audioDataUrl,
+              filename: event.data.payload.filename,
+            },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.error(
+                  '[AlgoSync ContentScript] Error sending message to background:',
+                  chrome.runtime.lastError.message,
+                );
+              } else {
+                console.log(
+                  '[AlgoSync ContentScript] Message sent to background, response:',
+                  response,
+                );
+              }
+            },
+          );
+        }
+      },
+      false,
+    );
 
     // Create mutation observer to watch for DOM changes
     const observer = new MutationObserver(async () => {
