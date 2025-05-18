@@ -7,7 +7,17 @@ export default defineConfig({
     description: 'Syncs Leetcode Submissions with Github',
     name: 'Leetcode Sync',
     version: '0.0.1',
-    permissions: ['tabs', 'background', 'storage', 'identity', 'windows', 'activeTab', 'scripting'],
+    permissions: [
+      'audioCapture',
+      'tabs',
+      'background',
+      'storage',
+      'identity',
+      'windows',
+      'activeTab',
+      'scripting',
+      'tabCapture',
+    ],
     host_permissions: ['*://leetcode.com/*'],
     background: {
       service_worker: 'background.js',

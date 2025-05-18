@@ -20,6 +20,7 @@ export function identifyLanguage(codeContainer: Element): Language {
   if (!codeElement) {
     throw new Error('Code element not found');
   }
+  console.log(codeElement.className);
   const language: string = codeElement.className.split('-')[1];
   switch (language) {
     case 'python':
@@ -38,9 +39,10 @@ export function extractProblemNameFromUrl(url: string): string {
   const pathname = new URL(url).pathname;
   // Use a regular expression to extract the text between `/problems/` and `/submissions/`
   const match = pathname.match(/problems\/([^/]+)\/submissions\//);
-
+  console.log(match);
   if (!match || !match[1]) {
     throw new Error('Problem name not found in the URL');
+    // Retry?
   }
 
   return match[1];
