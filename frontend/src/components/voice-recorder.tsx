@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { convertSecondsToTimer } from '@/lib/utils';
 
 interface VoiceRecorderProps {
+  isDisabled: boolean;
   onRecordingComplete: (audioFile: File) => void;
 }
 
-export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProps) {
+export default function VoiceRecorder({ isDisabled, onRecordingComplete }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [timer, setTimer] = useState<string>('00:00');
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -135,6 +136,7 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
   return (
     <div className="flex flex-col items-center justify-center space-y-2">
       <Button
+        disabled={isDisabled}
         onClick={isRecording ? stopRecording : startRecording}
         variant={isRecording ? 'default' : 'outline'}
         className="rounded-full"

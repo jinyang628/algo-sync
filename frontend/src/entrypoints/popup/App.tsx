@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import Loader from '@/components/shared/loader';
 import VoiceRecorder from '@/components/voice-recorder';
 
 import { SYSTEM_PROMPT, getLlmApiUrl } from '@/lib/llm';
@@ -82,8 +83,12 @@ export default function App() {
   return (
     <div className="flex h-[250px] w-[250px] flex-col items-center justify-center space-y-3 p-4">
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-md">
-        <VoiceRecorder onRecordingComplete={handleAudioFile} />
+        <VoiceRecorder
+          isDisabled={!geminiApiKey || isLoading}
+          onRecordingComplete={handleAudioFile}
+        />
       </div>
+      <Loader isLoading={isLoading} />
       {!geminiApiKey && (
         <p className="rounded bg-yellow-100 p-2 text-center text-xs text-yellow-600">
           Warning: Please{' '}
