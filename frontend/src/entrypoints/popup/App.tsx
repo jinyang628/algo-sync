@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 import VoiceRecorder from '@/components/voice-recorder';
 
+import { SYSTEM_PROMPT, getLlmApiUrl } from '@/lib/llm';
+
 // Helper function to convert File to base64
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -27,20 +29,20 @@ export default function App() {
     });
   }, []);
 
-  const MODEL_NAME: string = 'gemini-2.5-flash-preview-04-17';
-  const API_URL: string = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${geminiApiKey}`;
-
   const handleAudioFile = async (audioFile: File) => {
-    setIsLoading(true);
+    if (!geminiApiKey) {
+      return;
+    }
 
     try {
+      setIsLoading(true);
       const base64Audio = await fileToBase64(audioFile);
 
       const requestBody = {
         contents: [
           {
             parts: [
-              { text: 'Transcribe this audio recording.' },
+              { text: SYSTEM_PROMPT },
               {
                 inlineData: {
                   mimeType: audioFile.type || 'audio/webm',
@@ -51,11 +53,11 @@ export default function App() {
           },
         ],
         generationConfig: {
-          temperature: 0.1, // For more deterministic transcription
+          temperature: 0.1,
         },
       };
 
-      const response = await fetch(API_URL, {
+      const response = await fetch(getLlmApiUrl(geminiApiKey), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
