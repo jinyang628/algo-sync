@@ -83,3 +83,18 @@ export function extractCodeFromContainer(codeContainer: Element): string {
 
   return fullCode.trim();
 }
+
+// Helper function to convert File to base64
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // Result is like "data:audio/webm;base64,AHGASFAS..."
+      // We only want the part after the comma
+      const base64String = (reader.result as string).split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+}
