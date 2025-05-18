@@ -4,7 +4,7 @@ import Loader from '@/components/shared/loader';
 import VoiceRecorder from '@/components/voice-recorder';
 
 import { SYSTEM_PROMPT, getLlmApiUrl } from '@/lib/llm';
-import { fileToBase64 } from '@/lib/utils';
+import { extractCodeFromContainer, fileToBase64 } from '@/lib/utils';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -23,6 +23,8 @@ export default function App() {
 
     try {
       setIsLoading(true);
+      const code: string = extractCodeFromContainer();
+      console.log(code);
       const base64Audio = await fileToBase64(audioFile);
 
       const requestBody = {

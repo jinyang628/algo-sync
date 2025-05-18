@@ -31,7 +31,7 @@ export default defineConfig({
     ],
     web_accessible_resources: [
       {
-        resources: ['icon/*.png', 'images/*.svg', 'images/*.png'],
+        resources: ['icon/*.png', 'images/*.svg', 'images/*.png', 'injected.js'],
         matches: ['*://*/*'],
       },
     ],

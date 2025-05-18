@@ -1,6 +1,7 @@
 import { Language as LanguageSuffix } from '@/types/languages';
 
 import pushToGitHub from '@/lib/github';
+import { injectCustomScript } from '@/lib/inject';
 import {
   extractCodeFromContainer,
   extractProblemNameFromUrl,
@@ -26,19 +27,15 @@ export default defineContentScript({
   matches: ['*://leetcode.com/*'],
 
   async main() {
+    await injectCustomScript('/injected.js', { keepInDom: true });
+
     // Create mutation observer to watch for DOM changes
     const observer = new MutationObserver(async () => {
       if (isSubmissionAccepted()) {
         observer.disconnect();
         const problemName: string = extractProblemNameFromUrl(window.location.href);
-        const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
-        if (!codeContainer) {
-          console.error('Code container not found');
-
-          return;
-        }
-        const code: string = extractCodeFromContainer(codeContainer);
-        const languageSuffix: LanguageSuffix = identifyLanguageSuffix(codeContainer);
+        const code: string = extractCodeFromContainer();
+        const languageSuffix: LanguageSuffix = identifyLanguageSuffix();
         await pushToGitHub(
           `${problemName}.${languageSuffix}`,
           code,

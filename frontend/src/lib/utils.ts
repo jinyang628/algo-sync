@@ -15,7 +15,11 @@ export function formatProblemName(problemName: string): string {
   return problemName.toLowerCase().replace(/\s+/g, '_');
 }
 
-export function identifyLanguage(codeContainer: Element): Language {
+export function identifyLanguage(): Language {
+  const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
+  if (!codeContainer) {
+    throw new Error('Code container not found');
+  }
   const codeElement = codeContainer.querySelector('code');
   if (!codeElement) {
     throw new Error('Code element not found');
@@ -48,7 +52,11 @@ export function extractProblemNameFromUrl(url: string): string {
   return match[1];
 }
 
-export function extractCodeFromContainer(codeContainer: Element): string {
+export function extractCodeFromContainer(): string {
+  const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
+  if (!codeContainer) {
+    throw new Error('Code container not found');
+  }
   const codeElement = codeContainer.querySelector('code');
   if (!codeElement) {
     throw new Error('Code element not found');
