@@ -40,8 +40,8 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
 
     if (chunksRef.current.length === 0) {
       console.warn('No data recorded.');
-      
-return;
+
+      return;
     }
 
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
@@ -135,7 +135,7 @@ return;
   }, [handleDataAvailable, handleStop]);
 
   return (
-    <>
+    <div className="flex flex-col items-center justify-center space-y-2">
       <Button
         onClick={isRecording ? stopRecording : startRecording}
         variant={isRecording ? 'default' : 'outline'}
@@ -144,9 +144,9 @@ return;
       >
         {isRecording ? <MicOff /> : <Mic />}
       </Button>
-      <div className="text-sm">
+      <div className="text-center text-sm">
         {isRecording ? `Recording… ${timer}` : 'Click to start recording'}
       </div>
-    </>
+    </div>
   );
 }

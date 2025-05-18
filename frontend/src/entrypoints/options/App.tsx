@@ -17,7 +17,7 @@ type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
 export default function App() {
   const [clientId, setClientId] = useState<string>('');
   const [clientSecret, setClientSecret] = useState<string>('');
-  const [openaiApiKey, setOpenaiApiKey] = useState<string>('');
+  const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
   const authenticationIcon = (status: AuthenticationStatus) => {
     switch (status) {
@@ -41,8 +41,8 @@ export default function App() {
       browser.storage.sync.get('clientSecret').then((result) => {
         setClientSecret(result.clientSecret || '');
       });
-      browser.storage.sync.get('openaiApiKey').then((result) => {
-        setOpenaiApiKey(result.openaiApiKey || '');
+      browser.storage.sync.get('geminiApiKey').then((result) => {
+        setGeminiApiKey(result.geminiApiKey || '');
       });
       try {
         const accessToken: string = await browser.storage.sync
@@ -108,7 +108,7 @@ export default function App() {
           clientSecret: clientSecret,
         });
         browser.storage.sync.set({
-          openaiApiKey: openaiApiKey,
+          geminiApiKey: geminiApiKey,
         });
         toast({
           title: 'Settings saved!',
@@ -139,12 +139,12 @@ export default function App() {
             value={clientSecret}
             placeholder="Enter your Github OAuth App's Client Secret"
           />
-          <p className="text-base font-semibold">OpenAI API Key:</p>
+          <p className="text-base font-semibold">Gemini API Key:</p>
           <Input
             type="password"
-            onChange={(e) => setOpenaiApiKey(e.target.value)}
-            value={openaiApiKey}
-            placeholder="Enter your OpenAI API Key"
+            onChange={(e) => setGeminiApiKey(e.target.value)}
+            value={geminiApiKey}
+            placeholder="Enter your Gemini API Key"
           />
           {authenticateSection}
           {saveButton}
