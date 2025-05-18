@@ -1,8 +1,5 @@
 import { PublicPath } from 'wxt/browser';
 
-export const ALGO_SYNC_AUDIO_DATA_TYPE: string = 'ALGO_SYNC_AUDIO_DATA';
-export const ALGO_SYNC_INJECTED_SCRIPT_SRC_NAME: string = 'algo-sync-injected-script';
-
 export async function injectCustomScript(
   path: PublicPath,
   options?: { keepInDom?: boolean },

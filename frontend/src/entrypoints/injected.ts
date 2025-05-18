@@ -123,22 +123,17 @@ function createVoiceButton(): HTMLElement {
 
     if (audioChunks.length === 0) {
       recorder = null;
-      
-return;
+
+      return;
     }
 
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-    // const audioFile = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
-
-    // Convert Blob to Data URL to send via chrome.runtime.sendMessage
     const reader = new FileReader();
     reader.onloadend = () => {
       const audioDataUrl = reader.result as string;
-      console.log('[AlgoSync Injected] Posting audio data to content script.');
-      // **** CHANGE HERE: Use window.postMessage ****
       window.postMessage(
         {
-          type: 'ALGO_SYNC_AUDIO_DATA', // A unique type for your message
+          type: 'ALGO_SYNC_AUDIO_DATA',
           source: 'algo-sync-injected-script',
           payload: {
             audioDataUrl: audioDataUrl,
@@ -146,7 +141,7 @@ return;
           },
         },
         '*',
-      ); // '*' is okay for sending to own content script, or specify targetOrigin
+      );
     };
     reader.onerror = (error) => {
       console.error('[AlgoSync] FileReader error:', error);
@@ -157,11 +152,10 @@ return;
     recorder = null;
   };
 
-  const stopActualRecording = () => {
+  const stopRecording = () => {
     if (recorder && recorder.state === 'recording') {
-      recorder.stop(); // This will trigger the 'stop' event and handleStop()
+      recorder.stop();
     } else {
-      // If not recording (e.g., error before start, or already stopped), clean up UI
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = undefined;
       isRecording = false;
@@ -170,15 +164,15 @@ return;
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
       }
-      audioChunks = []; // Clear any partial chunks
+      audioChunks = [];
       recorder = null;
       updateButtonAppearance();
     }
   };
 
-  const startActualRecording = async () => {
+  const startRecording = async () => {
     if (recorder && recorder.state === 'recording') {
-      recorder.stop(); // Should trigger handleStop
+      recorder.stop();
     }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -192,19 +186,16 @@ return;
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('[AlgoSync] Microphone access granted.');
 
-      const options = { mimeType: 'audio/webm' }; // or 'audio/ogg; codecs=opus' etc.
+      const options = { mimeType: 'audio/webm' };
       recorder = new MediaRecorder(stream, options);
 
       recorder.addEventListener('dataavailable', handleDataAvailable);
       recorder.addEventListener('stop', handleStop);
-      // Handle recorder errors
       recorder.onerror = (event) => {
         console.error('[AlgoSync] MediaRecorder error:', (event as ErrorEvent).error || event);
-        // Potentially stop recording and reset UI
         if (isRecording) {
-          stopActualRecording(); // Call stop which handles UI and cleanup
+          stopRecording();
         }
         alert(
           'An error occurred with the media recorder: ' +
@@ -214,31 +205,27 @@ return;
 
       recorder.start();
       isRecording = true;
-      console.log('[AlgoSync] Recording started.');
 
       let seconds = 0;
       timerDisplay = '00:00';
-      updateButtonAppearance(); // Update immediately to show 00:00 and mic off
+      updateButtonAppearance();
 
       timerInterval = window.setInterval(() => {
-        // Use window.setInterval for clarity
         seconds++;
         timerDisplay = convertSecondsToTimer(seconds);
         if (isRecording) {
-          // Only update text if still recording
           statusText.textContent = timerDisplay;
         }
       }, 1000);
     } catch (err: any) {
       console.error('[AlgoSync] Error starting recording:', err);
-      isRecording = false; // Ensure state is correct
+      isRecording = false;
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
       }
-      updateButtonAppearance(); // Reset UI
+      updateButtonAppearance();
 
-      // Provide more user-friendly error for permission issues
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         alert(
           'Microphone access was denied. Please enable it for this site in your browser settings and for the extension.\n\nTo check extension permissions:\n1. Go to chrome://extensions\n2. Find this extension and click "Details".\n3. Scroll to "Site settings" or "Permissions" and ensure microphone access is allowed for leetcode.com.',
@@ -253,15 +240,16 @@ return;
 
   recordButton.addEventListener('click', () => {
     if (isRecording) {
-      stopActualRecording();
+      stopRecording();
     } else {
-      startActualRecording();
+      startRecording();
     }
   });
 
   recordButton.addEventListener('mousedown', () => {
     recordButton.style.transform = 'scale(0.92)';
   });
+
   recordButton.addEventListener('mouseup', () => {
     recordButton.style.transform = 'scale(1)';
     if (recordButton.matches(':hover')) {
@@ -277,8 +265,7 @@ return;
 
   window.addEventListener('beforeunload', () => {
     if (isRecording && recorder) {
-      console.log('[AlgoSync] beforeunload - stopping active recording.');
-      recorder.stop(); // Attempt to finalize recording
+      recorder.stop();
     }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());

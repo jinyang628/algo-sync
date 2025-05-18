@@ -1,11 +1,7 @@
 import { Language as LanguageSuffix } from '@/types/languages';
 
 import pushToGitHub from '@/lib/github';
-import {
-  ALGO_SYNC_AUDIO_DATA_TYPE,
-  ALGO_SYNC_INJECTED_SCRIPT_SRC_NAME,
-  injectCustomScript,
-} from '@/lib/inject';
+import { injectCustomScript } from '@/lib/inject';
 import {
   extractCodeFromContainer,
   extractProblemNameFromUrl,
@@ -42,10 +38,9 @@ export default defineContentScript({
 
         if (
           event.data.type &&
-          event.data.type === ALGO_SYNC_AUDIO_DATA_TYPE &&
-          event.data.source === ALGO_SYNC_INJECTED_SCRIPT_SRC_NAME
+          event.data.type === 'ALGO_SYNC_AUDIO_DATA' &&
+          event.data.source === 'algo-sync-injected-script'
         ) {
-          // Now, use chrome.runtime.sendMessage to send to background/popup
           chrome.runtime.sendMessage(
             {
               action: 'recordingComplete', // This is the action your background/popup listens for
