@@ -6,13 +6,6 @@ export default defineBackground(() => {
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     if (audioRequestActionSchema.safeParse(request).success) {
       const base64AudioData = audioDataUrlToBase64(request.audioDataUrl);
-
-      if (!base64AudioData) {
-        console.error('[AlgoSync Background] Could not extract base64 data from audioDataUrl.');
-
-        return false;
-      }
-
       const geminiRequestBody = {
         contents: [
           {
@@ -61,7 +54,7 @@ export default defineBackground(() => {
         })
         .then((data) => {
           console.log('[AlgoSync Background] Gemini API Success Response:', data);
-          let transcription = 'No transcription found.';
+          let response = 'No response found.';
           if (
             data.candidates &&
             data.candidates[0] &&
@@ -69,10 +62,10 @@ export default defineBackground(() => {
             data.candidates[0].content.parts &&
             data.candidates[0].content.parts[0]
           ) {
-            transcription = data.candidates[0].content.parts[0].text;
+            response = data.candidates[0].content.parts[0].text;
           }
-          console.log('[AlgoSync Background] Transcription/Summary:', transcription);
-          sendResponse({ success: true, transcription: transcription });
+          console.log('[AlgoSync Background] Transcription/Summary:', response);
+          sendResponse({ success: true, response: response });
         })
         .catch((error) => {
           console.error('[AlgoSync Background] Error calling Gemini API:', error);
