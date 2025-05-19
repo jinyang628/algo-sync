@@ -1,6 +1,10 @@
 import pushToGitHub from '@/lib/github';
 import { injectCustomScript } from '@/lib/inject';
-import { audioRequestActionSchema, audioRequestSchema } from '@/lib/types/audio';
+import {
+  audioRequestActionSchema,
+  audioRequestSchema,
+  textToSpeechRequestActionSchema,
+} from '@/lib/types/audio';
 import { Language as LanguageSuffix } from '@/lib/types/languages';
 import {
   extractCodeFromContainer,
@@ -102,7 +106,7 @@ export default defineContentScript({
     );
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.action === 'textToSpeech' && typeof request.text === 'string') {
+      if (textToSpeechRequestActionSchema.safeParse(request).success) {
         speakTextInPage(request.text)
           .then(() => {
             sendResponse({ success: true, message: 'TTS initiated by content script.' });
@@ -114,12 +118,12 @@ export default defineContentScript({
             });
           });
 
-        return true; // Indicates asynchronous response
+        return true;
+      } else {
+        console.error('[AlgoSync ContentScript] Received unknown message:', request);
+        
+return false;
       }
-      // Handle other actions if needed
-      // sendResponse({ success: false, error: 'Unknown action for content script' });
-
-      return false; // No async response for other actions unless explicitly handled
     });
 
     // Create mutation observer to watch for DOM changes
