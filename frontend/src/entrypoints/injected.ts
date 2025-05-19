@@ -15,6 +15,8 @@ import {
   extractProblemNameFromUrl,
 } from '@/lib/utils';
 
+let globalStatusTextUpdater: ((newText: string) => void) | null = null;
+
 function createVoiceButton(): HTMLElement {
   let isRecording: boolean = false;
   let timerDisplay: string = '00:00';
@@ -50,6 +52,10 @@ function createVoiceButton(): HTMLElement {
   statusText.style.fontSize = '14px';
   statusText.style.textAlign = 'center';
   statusText.style.color = WHITE_COLOR;
+
+  globalStatusTextUpdater = (newText: string) => {
+    statusText.textContent = newText;
+  };
 
   if (!document.getElementById('algo-sync-pulsate-style')) {
     const styleElement = document.createElement('style');
@@ -131,6 +137,10 @@ function createVoiceButton(): HTMLElement {
       recorder = null;
 
       return;
+    }
+
+    if (globalStatusTextUpdater) {
+      globalStatusTextUpdater('Waiting for response. Do not click out of the tab');
     }
 
     const code: string = extractCodeFromWorkingContainer();
@@ -369,4 +379,24 @@ export default defineUnlistedScript(async () => {
   } else {
     initAndInjectVoiceButton();
   }
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== window && event.origin !== window.location.origin) {
+      console.log(
+        '[AlgoSync Injected] Ignoring message from different origin/source:',
+        event.origin,
+      );
+
+      return;
+    }
+
+    if (event.data && event.data.type === 'RECORD_BUTTON_STATUS_UPDATE') {
+      if (!globalStatusTextUpdater) {
+        console.error('[AlgoSync Injected] No global status text updater found');
+
+        return;
+      }
+      globalStatusTextUpdater(event.data.payload.text);
+    }
+  });
 });

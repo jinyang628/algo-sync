@@ -45,7 +45,7 @@ async function speakTextInPage(text: string): Promise<void> {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 1.0;
-      utterance.pitch = 1.5;
+      utterance.pitch = 1.2;
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         utterance.voice =
@@ -118,11 +118,23 @@ export default defineContentScript({
         speakTextInPage(request.text)
           .then(() => {
             sendResponse({ success: true, message: 'TTS initiated by content script.' });
+            window.postMessage({
+              type: 'RECORD_BUTTON_STATUS_UPDATE',
+              payload: {
+                text: 'Click to record',
+              },
+            });
           })
           .catch((error) => {
             sendResponse({
               success: false,
               error: `TTS failed in content script: ${error.message}`,
+            });
+            window.postMessage({
+              type: 'RECORD_BUTTON_STATUS_UPDATE',
+              payload: {
+                text: 'Error. Please try recording again.',
+              },
             });
           });
 
