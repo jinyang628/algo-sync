@@ -288,7 +288,7 @@ function createVoiceButton(): HTMLElement {
   return voiceUIContainer;
 }
 
-export default defineUnlistedScript(() => {
+export default defineUnlistedScript(async () => {
   const initAndInjectVoiceButton = () => {
     const existingContainer = document.getElementById('algo-sync-container');
     if (existingContainer) {

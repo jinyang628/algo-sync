@@ -41,29 +41,34 @@ export default defineBackground(() => {
         },
       ];
 
-      const mergedRequestBody = prevConversationParts
-        ? {
-            ...prevConversationParts,
-            contents: [
-              {
-                parts: [...prevConversationParts.contents[0].parts, ...newParts],
-              },
-            ],
-            generationConfig: prevConversationParts.generationConfig,
-          }
-        : {
-            contents: [
-              {
-                parts: [
-                  {
-                    text: getSystemPrompt(request.problemName, request.problemDescription),
-                  },
-                  ...newParts,
-                ],
-              },
-            ],
-            generationConfig: { temperature: 0.1 },
-          };
+      console.log('prevConversationParts', prevConversationParts);
+
+      const mergedRequestBody =
+        prevConversationParts &&
+        prevConversationParts.contents &&
+        prevConversationParts.contents.length > 0
+          ? {
+              ...prevConversationParts,
+              contents: [
+                {
+                  parts: [...prevConversationParts.contents[0].parts, ...newParts],
+                },
+              ],
+              generationConfig: prevConversationParts.generationConfig,
+            }
+          : {
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: getSystemPrompt(request.problemName, request.problemDescription),
+                    },
+                    ...newParts,
+                  ],
+                },
+              ],
+              generationConfig: { temperature: 0.1 },
+            };
 
       const geminiApiKey: string = await browser.storage.sync.get('geminiApiKey').then((result) => {
         return result.geminiApiKey;
@@ -91,7 +96,6 @@ export default defineBackground(() => {
           return response.json();
         })
         .then(async (data) => {
-          console.log('[AlgoSync Background] Gemini API Success Response:', data);
           let response = 'No response found.';
 
           if (

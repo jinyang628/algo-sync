@@ -43,14 +43,14 @@ async function speakTextInPage(text: string): Promise<void> {
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      // Optional: Configure utterance
-      // utterance.lang = 'en-US';
-      // utterance.rate = 1.0;
-      // utterance.pitch = 1.0;
-      // const voices = window.speechSynthesis.getVoices();
-      // if (voices.length > 0) {
-      //    utterance.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
-      // }
+      utterance.lang = 'en-US';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.5;
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        utterance.voice =
+          voices.find((v) => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+      }
 
       utterance.onend = () => {
         resolve();
@@ -90,6 +90,16 @@ export default defineContentScript({
           return;
         }
         const audioRequest = audioRequestSchema.parse(event.data.payload);
+        const prevProblemName: string = await browser.storage.local
+          .get('prevProblemName')
+          .then((result) => {
+            return result.prevProblemName;
+          });
+        if (prevProblemName !== audioRequest.problemName) {
+          console.log('New problem name detected, resetting conversation context.');
+          await browser.storage.local.set({ prevProblemName: audioRequest.problemName });
+          await browser.storage.local.set({ prevConversationParts: null });
+        }
         const audioRequestAction = audioRequestActionSchema.parse({
           action: 'audio',
           audioDataUrl: audioRequest.audioDataUrl,
