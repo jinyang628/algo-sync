@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 export const audioRequestSchema = z.object({
   audioDataUrl: z.string(),
+  code: z.string(),
+  problemName: z.string(),
+  problemDescription: z.string(),
 });
 
 export type AudioRequest = z.infer<typeof audioRequestSchema>;

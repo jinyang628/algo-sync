@@ -42,17 +42,41 @@ export function extractProblemNameFromUrl(url: string): string {
   // Extract the pathname from the URL
   const pathname = new URL(url).pathname;
   // Use a regular expression to extract the text between `/problems/` and `/submissions/`
-  const match = pathname.match(/problems\/([^/]+)\/submissions\//);
-  console.log(match);
-  if (!match || !match[1]) {
-    throw new Error('Problem name not found in the URL');
-    // Retry?
+  const match_submissions = pathname.match(/problems\/([^/]+)\/submissions\//);
+  if (match_submissions && match_submissions[1]) {
+    return match_submissions[1];
   }
-
-  return match[1];
+  const match_description = pathname.match(/problems\/([^/]+)\/description\//);
+  if (match_description && match_description[1]) {
+    return match_description[1];
+  }
+  throw new Error('Unable to extract problem name from URL');
 }
 
-export function extractCodeFromContainer(): string {
+export function extractProblemDescription(): string {
+  const problemDescriptionContainer = document.querySelector<HTMLDivElement>(
+    'div[data-track-load="description_content"]',
+  );
+
+  const descriptionText: string = problemDescriptionContainer?.innerText.trim() ?? '';
+
+  return descriptionText;
+}
+
+export function extractCodeFromWorkingContainer(): string {
+  const codeContainer = document.querySelector<HTMLDivElement>(
+    'div[class="view-lines monaco-mouse-cursor-text"]',
+  );
+  if (!codeContainer) {
+    throw new Error('Code container not found');
+  }
+
+  const descriptionText: string = codeContainer?.innerText.trim() ?? '';
+
+  return descriptionText;
+}
+
+export function extractCodeFromAcceptedSubmissionContainer(): string {
   const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
   if (!codeContainer) {
     throw new Error('Code container not found');

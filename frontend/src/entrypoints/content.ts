@@ -7,7 +7,7 @@ import {
 } from '@/lib/types/audio';
 import { Language as LanguageSuffix } from '@/lib/types/languages';
 import {
-  extractCodeFromContainer,
+  extractCodeFromAcceptedSubmissionContainer,
   extractProblemNameFromUrl,
   identifyLanguage as identifyLanguageSuffix,
 } from '@/lib/utils';
@@ -94,6 +94,9 @@ export default defineContentScript({
         const audioRequestAction = audioRequestActionSchema.parse({
           action: 'audio',
           audioDataUrl: audioRequest.audioDataUrl,
+          code: audioRequest.code,
+          problemName: audioRequest.problemName,
+          problemDescription: audioRequest.problemDescription,
         });
 
         chrome.runtime.sendMessage(audioRequestAction);
@@ -127,7 +130,7 @@ export default defineContentScript({
       if (isSubmissionAccepted()) {
         observer.disconnect();
         const problemName: string = extractProblemNameFromUrl(window.location.href);
-        const code: string = extractCodeFromContainer();
+        const code: string = extractCodeFromAcceptedSubmissionContainer();
         const languageSuffix: LanguageSuffix = identifyLanguageSuffix();
         await pushToGitHub(
           `${problemName}.${languageSuffix}`,

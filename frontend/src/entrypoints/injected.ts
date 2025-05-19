@@ -8,7 +8,12 @@ import {
 } from '@/components/voice';
 
 import { audioRequestSchema } from '@/lib/types/audio';
-import { convertSecondsToTimer } from '@/lib/utils';
+import {
+  convertSecondsToTimer,
+  extractCodeFromWorkingContainer,
+  extractProblemDescription,
+  extractProblemNameFromUrl,
+} from '@/lib/utils';
 
 function createVoiceButton(): HTMLElement {
   let isRecording: boolean = false;
@@ -128,11 +133,20 @@ function createVoiceButton(): HTMLElement {
       return;
     }
 
+    const code: string = extractCodeFromWorkingContainer();
+    const problemName: string = extractProblemNameFromUrl(window.location.href);
+    const problemDescription: string = extractProblemDescription();
+
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
     const reader = new FileReader();
     reader.onloadend = () => {
       const audioDataUrl = reader.result as string;
-      const audioRequest = audioRequestSchema.parse({ audioDataUrl: audioDataUrl });
+      const audioRequest = audioRequestSchema.parse({
+        audioDataUrl: audioDataUrl,
+        code: code,
+        problemName: problemName,
+        problemDescription: problemDescription,
+      });
       window.postMessage(
         {
           type: 'ALGO_SYNC_AUDIO_DATA',

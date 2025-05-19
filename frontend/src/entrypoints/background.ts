@@ -36,6 +36,15 @@ export default defineBackground(() => {
                   data: base64AudioData,
                 },
               },
+              {
+                text: `Problem Name: ${request.problemName}`,
+              },
+              {
+                text: `Problem Description: ${request.problemDescription}`,
+              },
+              {
+                text: `User's code so far: ${request.code}`,
+              },
             ],
           },
         ],
