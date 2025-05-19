@@ -2,6 +2,44 @@ import { SYSTEM_PROMPT, getLlmApiUrl } from '@/lib/llm';
 import { audioRequestActionSchema } from '@/lib/types/audio';
 import { audioDataUrlToBase64 } from '@/lib/utils';
 
+async function sendTextToContentScriptForTTS(textToSpeak: string) {
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (activeTab && activeTab.id) {
+      console.log(
+        `[AlgoSync Background] Sending text to content script in tab ${activeTab.id} for TTS:`,
+        textToSpeak,
+      );
+      // The content script needs to be listening for this action
+      chrome.tabs.sendMessage(
+        activeTab.id,
+        {
+          action: 'speakTextFromBackground', // New action for content script
+          text: textToSpeak,
+        },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.error(
+              '[AlgoSync Background] Error sending TTS message to content script:',
+              chrome.runtime.lastError.message,
+              "- Is a content script listening on the active tab for 'speakTextFromBackground'?",
+            );
+          } else {
+            console.log(
+              '[AlgoSync Background] TTS message acknowledged by content script:',
+              response,
+            );
+          }
+        },
+      );
+    } else {
+      console.warn('[AlgoSync Background] No active tab found to send TTS message to.');
+    }
+  } catch (error) {
+    console.error('[AlgoSync Background] Error querying active tab:', error);
+  }
+}
+
 export default defineBackground(() => {
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     if (audioRequestActionSchema.safeParse(request).success) {
@@ -41,9 +79,7 @@ export default defineBackground(() => {
       })
         .then((response) => {
           if (!response.ok) {
-            // If response is not OK, read the error body as JSON
             return response.json().then((errorBody) => {
-              console.error('[AlgoSync Background] Gemini API Error Response:', errorBody);
               throw new Error(
                 `Gemini API request failed with status ${response.status}: ${errorBody.error?.message || response.statusText}`,
               );
@@ -52,7 +88,7 @@ export default defineBackground(() => {
 
           return response.json();
         })
-        .then((data) => {
+        .then(async (data) => {
           console.log('[AlgoSync Background] Gemini API Success Response:', data);
           let response = 'No response found.';
           if (
@@ -64,8 +100,22 @@ export default defineBackground(() => {
           ) {
             response = data.candidates[0].content.parts[0].text;
           }
-          console.log('[AlgoSync Background] Transcription/Summary:', response);
-          sendResponse({ success: true, response: response });
+          try {
+            await sendTextToContentScriptForTTS(response); // Call the new helper
+            console.log('[AlgoSync Background] TTS initiation message sent to content script.');
+            sendResponse({ success: true, response: response, ttsInitiated: true });
+          } catch (ttsError: any) {
+            console.error(
+              '[AlgoSync Background] Error sending TTS message to content script:',
+              ttsError,
+            );
+            sendResponse({
+              success: true,
+              response: response,
+              ttsInitiated: false,
+              ttsError: ttsError.message,
+            });
+          }
         })
         .catch((error) => {
           console.error('[AlgoSync Background] Error calling Gemini API:', error);

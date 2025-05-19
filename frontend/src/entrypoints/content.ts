@@ -23,6 +23,53 @@ function isSubmissionAccepted(): boolean {
   return true;
 }
 
+async function speakTextInPage(text: string): Promise<void> {
+  if (!text) {
+    console.warn('[AlgoSync ContentScript] No text provided to speak.');
+
+    return;
+  }
+
+  if ('speechSynthesis' in window) {
+    return new Promise((resolve, reject) => {
+      try {
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        // Optional: Configure utterance
+        // utterance.lang = 'en-US';
+        // utterance.rate = 1.0;
+        // utterance.pitch = 1.0;
+        // const voices = window.speechSynthesis.getVoices();
+        // if (voices.length > 0) {
+        //    utterance.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+        // }
+
+        utterance.onend = () => {
+          console.log('[AlgoSync ContentScript] Speech finished.');
+          resolve();
+        };
+        utterance.onerror = (event) => {
+          console.error('[AlgoSync ContentScript] SpeechSynthesisUtterance error:', event.error);
+          reject(event.error);
+        };
+
+        console.log('[AlgoSync ContentScript] Speaking text:', text);
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.error('[AlgoSync ContentScript] Error in speakTextInPage:', error);
+        reject(error);
+      }
+    });
+  } else {
+    console.error(
+      '[AlgoSync ContentScript] SpeechSynthesis API not supported in this page context.',
+    );
+
+    return Promise.reject(new Error('SpeechSynthesis API not supported.'));
+  }
+}
+
 export default defineContentScript({
   matches: ['*://leetcode.com/*'],
 
@@ -31,11 +78,10 @@ export default defineContentScript({
 
     window.addEventListener(
       'message',
-      (event) => {
+      async (event) => {
         if (event.source !== window) {
           return;
         }
-
         if (
           event.source !== window ||
           !event.data ||
@@ -54,6 +100,28 @@ export default defineContentScript({
       },
       false,
     );
+
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      console.log('[AlgoSync ContentScript] Received runtime message from background:', request);
+      if (request.action === 'speakTextFromBackground' && typeof request.text === 'string') {
+        speakTextInPage(request.text)
+          .then(() => {
+            sendResponse({ success: true, message: 'TTS initiated by content script.' });
+          })
+          .catch((error) => {
+            sendResponse({
+              success: false,
+              error: `TTS failed in content script: ${error.message}`,
+            });
+          });
+
+        return true; // Indicates asynchronous response
+      }
+      // Handle other actions if needed
+      // sendResponse({ success: false, error: 'Unknown action for content script' });
+
+      return false; // No async response for other actions unless explicitly handled
+    });
 
     // Create mutation observer to watch for DOM changes
     const observer = new MutationObserver(async () => {
