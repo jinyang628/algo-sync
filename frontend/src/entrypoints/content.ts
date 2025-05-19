@@ -28,50 +28,46 @@ function isSubmissionAccepted(): boolean {
 }
 
 async function speakTextInPage(text: string): Promise<void> {
-  if (!text) {
-    console.warn('[AlgoSync ContentScript] No text provided to speak.');
-
-    return;
-  }
-
-  if ('speechSynthesis' in window) {
-    return new Promise((resolve, reject) => {
-      try {
-        window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        // Optional: Configure utterance
-        // utterance.lang = 'en-US';
-        // utterance.rate = 1.0;
-        // utterance.pitch = 1.0;
-        // const voices = window.speechSynthesis.getVoices();
-        // if (voices.length > 0) {
-        //    utterance.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
-        // }
-
-        utterance.onend = () => {
-          console.log('[AlgoSync ContentScript] Speech finished.');
-          resolve();
-        };
-        utterance.onerror = (event) => {
-          console.error('[AlgoSync ContentScript] SpeechSynthesisUtterance error:', event.error);
-          reject(event.error);
-        };
-
-        console.log('[AlgoSync ContentScript] Speaking text:', text);
-        window.speechSynthesis.speak(utterance);
-      } catch (error) {
-        console.error('[AlgoSync ContentScript] Error in speakTextInPage:', error);
-        reject(error);
-      }
-    });
-  } else {
-    console.error(
-      '[AlgoSync ContentScript] SpeechSynthesis API not supported in this page context.',
-    );
-
+  if (!('speechSynthesis' in window)) {
     return Promise.reject(new Error('SpeechSynthesis API not supported.'));
   }
+
+  return new Promise((resolve, reject) => {
+    if (!text) {
+      console.warn('[AlgoSync ContentScript] No text provided to speak.');
+
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Optional: Configure utterance
+      // utterance.lang = 'en-US';
+      // utterance.rate = 1.0;
+      // utterance.pitch = 1.0;
+      // const voices = window.speechSynthesis.getVoices();
+      // if (voices.length > 0) {
+      //    utterance.voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
+      // }
+
+      utterance.onend = () => {
+        console.log('[AlgoSync ContentScript] Speech finished.');
+        resolve();
+      };
+      utterance.onerror = (event) => {
+        console.error('[AlgoSync ContentScript] SpeechSynthesisUtterance error:', event.error);
+        reject(event.error);
+      };
+
+      console.log('[AlgoSync ContentScript] Speaking text:', text);
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error('[AlgoSync ContentScript] Error in speakTextInPage:', error);
+      reject(error);
+    }
+  });
 }
 
 export default defineContentScript({
@@ -121,8 +117,8 @@ export default defineContentScript({
         return true;
       } else {
         console.error('[AlgoSync ContentScript] Received unknown message:', request);
-        
-return false;
+
+        return false;
       }
     });
 
