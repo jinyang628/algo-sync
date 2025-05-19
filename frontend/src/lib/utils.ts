@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-import { Language, languageEnum } from '@/types/languages';
+import { Language, languageEnum } from '@/lib/types/languages';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

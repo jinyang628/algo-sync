@@ -7,6 +7,7 @@ import {
   WHITE_COLOR,
 } from '@/components/voice';
 
+import { audioRequestSchema } from '@/lib/types/audio';
 import { convertSecondsToTimer } from '@/lib/utils';
 
 function createVoiceButton(): HTMLElement {
@@ -131,14 +132,12 @@ function createVoiceButton(): HTMLElement {
     const reader = new FileReader();
     reader.onloadend = () => {
       const audioDataUrl = reader.result as string;
+      const audioRequest = audioRequestSchema.parse({ audioDataUrl: audioDataUrl });
       window.postMessage(
         {
           type: 'ALGO_SYNC_AUDIO_DATA',
           source: 'algo-sync-injected-script',
-          payload: {
-            audioDataUrl: audioDataUrl,
-            filename: `voice_${Date.now()}.webm`,
-          },
+          payload: audioRequest,
         },
         '*',
       );

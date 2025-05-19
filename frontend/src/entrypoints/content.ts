@@ -1,7 +1,7 @@
-import { Language as LanguageSuffix } from '@/types/languages';
-
 import pushToGitHub from '@/lib/github';
 import { injectCustomScript } from '@/lib/inject';
+import { audioRequestActionSchema, audioRequestSchema } from '@/lib/types/audio';
+import { Language as LanguageSuffix } from '@/lib/types/languages';
 import {
   extractCodeFromContainer,
   extractProblemNameFromUrl,
@@ -44,13 +44,13 @@ export default defineContentScript({
         ) {
           return;
         }
-        const { audioDataUrl, filename } = event.data.payload;
-
-        chrome.runtime.sendMessage({
-          action: 'recordingComplete',
-          audioDataUrl: audioDataUrl,
-          filename: filename,
+        const audioRequest = audioRequestSchema.parse(event.data.payload);
+        const audioRequestAction = audioRequestActionSchema.parse({
+          action: 'audio',
+          audioDataUrl: audioRequest.audioDataUrl,
         });
+
+        chrome.runtime.sendMessage(audioRequestAction);
       },
       false,
     );

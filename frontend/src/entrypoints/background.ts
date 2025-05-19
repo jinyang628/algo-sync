@@ -1,15 +1,16 @@
 import { SYSTEM_PROMPT, getLlmApiUrl } from '@/lib/llm';
+import { audioRequestActionSchema } from '@/lib/types/audio';
 import { audioDataUrlToBase64 } from '@/lib/utils';
 
 export default defineBackground(() => {
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    if (request.action === 'recordingComplete' && typeof request.audioDataUrl === 'string') {
+    if (audioRequestActionSchema.safeParse(request).success) {
       const base64AudioData = audioDataUrlToBase64(request.audioDataUrl);
 
       if (!base64AudioData) {
         console.error('[AlgoSync Background] Could not extract base64 data from audioDataUrl.');
-        
-return false;
+
+        return false;
       }
 
       const geminiRequestBody = {
@@ -55,8 +56,8 @@ return false;
               );
             });
           }
-          
-return response.json();
+
+          return response.json();
         })
         .then((data) => {
           console.log('[AlgoSync Background] Gemini API Success Response:', data);
@@ -81,8 +82,8 @@ return response.json();
       return true;
     } else {
       console.error('[AlgoSync Background] Received unknown message:', request);
-      
-return false;
+
+      return false;
     }
   });
 });
