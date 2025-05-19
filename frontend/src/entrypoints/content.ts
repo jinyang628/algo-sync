@@ -37,31 +37,20 @@ export default defineContentScript({
         }
 
         if (
-          event.data.type &&
-          event.data.type === 'ALGO_SYNC_AUDIO_DATA' &&
-          event.data.source === 'algo-sync-injected-script'
+          event.source !== window ||
+          !event.data ||
+          event.data.type !== 'ALGO_SYNC_AUDIO_DATA' ||
+          event.data.source !== 'algo-sync-injected-script'
         ) {
-          chrome.runtime.sendMessage(
-            {
-              action: 'recordingComplete', // This is the action your background/popup listens for
-              audioDataUrl: event.data.payload.audioDataUrl,
-              filename: event.data.payload.filename,
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                console.error(
-                  '[AlgoSync ContentScript] Error sending message to background:',
-                  chrome.runtime.lastError.message,
-                );
-              } else {
-                console.log(
-                  '[AlgoSync ContentScript] Message sent to background, response:',
-                  response,
-                );
-              }
-            },
-          );
+          return;
         }
+        const { audioDataUrl, filename } = event.data.payload;
+
+        chrome.runtime.sendMessage({
+          action: 'recordingComplete',
+          audioDataUrl: audioDataUrl,
+          filename: filename,
+        });
       },
       false,
     );

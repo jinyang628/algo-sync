@@ -107,6 +107,10 @@ export function fileToBase64(file: File): Promise<string> {
   });
 }
 
+export function audioDataUrlToBase64(url: string): string {
+  return url.split(',')[1];
+}
+
 export function convertSecondsToTimer(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
