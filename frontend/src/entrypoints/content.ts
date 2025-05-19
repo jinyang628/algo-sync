@@ -102,8 +102,7 @@ export default defineContentScript({
     );
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      console.log('[AlgoSync ContentScript] Received runtime message from background:', request);
-      if (request.action === 'speakTextFromBackground' && typeof request.text === 'string') {
+      if (request.action === 'textToSpeech' && typeof request.text === 'string') {
         speakTextInPage(request.text)
           .then(() => {
             sendResponse({ success: true, message: 'TTS initiated by content script.' });

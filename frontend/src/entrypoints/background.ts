@@ -1,37 +1,16 @@
 import { SYSTEM_PROMPT, getLlmApiUrl } from '@/lib/llm';
-import { audioRequestActionSchema } from '@/lib/types/audio';
+import { audioRequestActionSchema, textToSpeechRequestActionSchema } from '@/lib/types/audio';
 import { audioDataUrlToBase64 } from '@/lib/utils';
 
 async function sendTextToContentScriptForTTS(textToSpeak: string) {
   try {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (activeTab && activeTab.id) {
-      console.log(
-        `[AlgoSync Background] Sending text to content script in tab ${activeTab.id} for TTS:`,
-        textToSpeak,
-      );
-      // The content script needs to be listening for this action
-      chrome.tabs.sendMessage(
-        activeTab.id,
-        {
-          action: 'speakTextFromBackground', // New action for content script
-          text: textToSpeak,
-        },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            console.error(
-              '[AlgoSync Background] Error sending TTS message to content script:',
-              chrome.runtime.lastError.message,
-              "- Is a content script listening on the active tab for 'speakTextFromBackground'?",
-            );
-          } else {
-            console.log(
-              '[AlgoSync Background] TTS message acknowledged by content script:',
-              response,
-            );
-          }
-        },
-      );
+      const textToSpeechRequest = textToSpeechRequestActionSchema.parse({
+        action: 'textToSpeech',
+        text: textToSpeak,
+      });
+      chrome.tabs.sendMessage(activeTab.id, textToSpeechRequest);
     } else {
       console.warn('[AlgoSync Background] No active tab found to send TTS message to.');
     }
@@ -100,15 +79,11 @@ export default defineBackground(() => {
           ) {
             response = data.candidates[0].content.parts[0].text;
           }
+
           try {
-            await sendTextToContentScriptForTTS(response); // Call the new helper
-            console.log('[AlgoSync Background] TTS initiation message sent to content script.');
+            await sendTextToContentScriptForTTS(response);
             sendResponse({ success: true, response: response, ttsInitiated: true });
           } catch (ttsError: any) {
-            console.error(
-              '[AlgoSync Background] Error sending TTS message to content script:',
-              ttsError,
-            );
             sendResponse({
               success: true,
               response: response,

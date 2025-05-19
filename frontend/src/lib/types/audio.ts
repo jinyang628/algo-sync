@@ -11,3 +11,10 @@ export const audioRequestActionSchema = audioRequestSchema.extend({
 });
 
 export type AudioRequestAction = z.infer<typeof audioRequestActionSchema>;
+
+export const textToSpeechRequestActionSchema = z.object({
+  action: z.literal('textToSpeech'),
+  text: z.string(),
+});
+
+export type TextToSpeechRequestAction = z.infer<typeof textToSpeechRequestActionSchema>;
