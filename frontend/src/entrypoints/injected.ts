@@ -301,24 +301,65 @@ export default defineUnlistedScript(() => {
     mainFixedContainer.style.top = '50px';
     mainFixedContainer.style.right = '10px';
     mainFixedContainer.style.zIndex = '10000';
-
     mainFixedContainer.style.width = 'auto';
     mainFixedContainer.style.minWidth = '130px';
     mainFixedContainer.style.height = 'auto';
     mainFixedContainer.style.padding = '12px';
-
     mainFixedContainer.style.backgroundColor = THEME_COLOR;
     mainFixedContainer.style.borderRadius = '10px';
     mainFixedContainer.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
-
     mainFixedContainer.style.display = 'flex';
     mainFixedContainer.style.flexDirection = 'column';
     mainFixedContainer.style.alignItems = 'center';
     mainFixedContainer.style.justifyContent = 'center';
 
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    mainFixedContainer.style.cursor = 'move';
+
+    mainFixedContainer.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      const rect = mainFixedContainer.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+      mainFixedContainer.style.right = 'auto';
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e: MouseEvent) {
+      if (!isDragging) return;
+
+      const rect = mainFixedContainer.getBoundingClientRect();
+      const containerWidth = rect.width;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      let newLeft = e.clientX - dragOffsetX;
+      let newTop = e.clientY - dragOffsetY;
+
+      const minLeft = -containerWidth + 30;
+      const maxLeft = vw - 30;
+      const minTop = 0;
+      const maxTop = vh - 30;
+
+      newLeft = Math.min(Math.max(newLeft, minLeft), maxLeft);
+      newTop = Math.min(Math.max(newTop, minTop), maxTop);
+
+      mainFixedContainer.style.left = `${newLeft}px`;
+      mainFixedContainer.style.top = `${newTop}px`;
+    }
+
+    function onMouseUp() {
+      isDragging = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+
     const voiceInterfaceElement = createVoiceButton();
     mainFixedContainer.appendChild(voiceInterfaceElement);
-
     document.body.appendChild(mainFixedContainer);
   };
 

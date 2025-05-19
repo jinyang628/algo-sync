@@ -14,4 +14,3 @@ https://github.com/user-attachments/assets/a0212b5f-ac3b-4035-aac6-a541be5a0338
 ## In-progress features
 
 - Publish on Chrome Web Store to avoid the need of self-hosting
-- Ability to drag the record button around the LeetCode page
