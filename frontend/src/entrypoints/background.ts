@@ -1,4 +1,4 @@
-import { SYSTEM_PROMPT, getLlmApiUrl } from '@/lib/llm';
+import { getLlmApiUrl, getSystemPrompt } from '@/lib/llm';
 import { audioRequestActionSchema, textToSpeechRequestActionSchema } from '@/lib/types/audio';
 import { audioDataUrlToBase64 } from '@/lib/utils';
 
@@ -22,40 +22,54 @@ async function sendTextToContentScriptForTTS(textToSpeak: string) {
 export default defineBackground(() => {
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     if (audioRequestActionSchema.safeParse(request).success) {
+      const prevConversationParts = await browser.storage.local
+        .get('prevConversationParts')
+        .then((result) => {
+          return result.prevConversationParts;
+        });
+
       const base64AudioData = audioDataUrlToBase64(request.audioDataUrl);
-      const geminiRequestBody = {
-        contents: [
-          {
-            parts: [
+      const newParts = [
+        {
+          text: `User's code so far: ${request.code}`,
+        },
+        {
+          inlineData: {
+            mimeType: 'audio/webm',
+            data: base64AudioData,
+          },
+        },
+      ];
+
+      const mergedRequestBody = prevConversationParts
+        ? {
+            ...prevConversationParts,
+            contents: [
               {
-                text: SYSTEM_PROMPT,
-              },
-              {
-                inlineData: {
-                  mimeType: 'audio/webm',
-                  data: base64AudioData,
-                },
-              },
-              {
-                text: `Problem Name: ${request.problemName}`,
-              },
-              {
-                text: `Problem Description: ${request.problemDescription}`,
-              },
-              {
-                text: `User's code so far: ${request.code}`,
+                parts: [...prevConversationParts.contents[0].parts, ...newParts],
               },
             ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-        },
-      };
+            generationConfig: prevConversationParts.generationConfig,
+          }
+        : {
+            contents: [
+              {
+                parts: [
+                  {
+                    text: getSystemPrompt(request.problemName, request.problemDescription),
+                  },
+                  ...newParts,
+                ],
+              },
+            ],
+            generationConfig: { temperature: 0.1 },
+          };
 
       const geminiApiKey: string = await browser.storage.sync.get('geminiApiKey').then((result) => {
         return result.geminiApiKey;
       });
+
+      console.log(mergedRequestBody);
 
       console.log('[AlgoSync Background] Sending request to Gemini API...');
       fetch(getLlmApiUrl(geminiApiKey), {
@@ -63,7 +77,7 @@ export default defineBackground(() => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(geminiRequestBody),
+        body: JSON.stringify(mergedRequestBody),
       })
         .then((response) => {
           if (!response.ok) {
@@ -79,6 +93,7 @@ export default defineBackground(() => {
         .then(async (data) => {
           console.log('[AlgoSync Background] Gemini API Success Response:', data);
           let response = 'No response found.';
+
           if (
             data.candidates &&
             data.candidates[0] &&
@@ -88,6 +103,17 @@ export default defineBackground(() => {
           ) {
             response = data.candidates[0].content.parts[0].text;
           }
+
+          const assistantParts = [{ text: response }];
+          const updatedConversation = {
+            ...mergedRequestBody,
+            contents: [
+              {
+                parts: [...mergedRequestBody.contents[0].parts, ...assistantParts],
+              },
+            ],
+          };
+          await browser.storage.local.set({ prevConversationParts: updatedConversation });
 
           try {
             await sendTextToContentScriptForTTS(response);

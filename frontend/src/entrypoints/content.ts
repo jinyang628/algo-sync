@@ -53,7 +53,6 @@ async function speakTextInPage(text: string): Promise<void> {
       // }
 
       utterance.onend = () => {
-        console.log('[AlgoSync ContentScript] Speech finished.');
         resolve();
       };
       utterance.onerror = (event) => {
