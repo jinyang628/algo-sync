@@ -322,9 +322,10 @@ export default defineUnlistedScript(async () => {
     mainFixedContainer.addEventListener('mousedown', (e) => {
       isDragging = true;
       const rect = mainFixedContainer.getBoundingClientRect();
+      mainFixedContainer.style.left = `${rect.left}px`;
+      mainFixedContainer.style.right = 'auto';
       dragOffsetX = e.clientX - rect.left;
       dragOffsetY = e.clientY - rect.top;
-      mainFixedContainer.style.right = 'auto';
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
     });

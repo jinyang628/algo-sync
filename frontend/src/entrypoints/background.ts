@@ -2,13 +2,13 @@ import { getLlmApiUrl, getSystemPrompt } from '@/lib/llm';
 import { audioRequestActionSchema, textToSpeechRequestActionSchema } from '@/lib/types/audio';
 import { audioDataUrlToBase64 } from '@/lib/utils';
 
-async function sendTextToContentScriptForTTS(textToSpeak: string) {
+async function sendTextToContentScriptForTTS(text: string) {
   try {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (activeTab && activeTab.id) {
       const textToSpeechRequest = textToSpeechRequestActionSchema.parse({
         action: 'textToSpeech',
-        text: textToSpeak,
+        text: text,
       });
       chrome.tabs.sendMessage(activeTab.id, textToSpeechRequest);
     } else {
