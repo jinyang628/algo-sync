@@ -34,6 +34,7 @@ export default defineUnlistedScript(async () => {
     mainFixedContainer.style.flexDirection = 'column';
     mainFixedContainer.style.alignItems = 'center';
     mainFixedContainer.style.justifyContent = 'center';
+    mainFixedContainer.style.opacity = '0.8';
 
     mainFixedContainerRef = mainFixedContainer;
 
@@ -216,6 +217,7 @@ export default defineUnlistedScript(async () => {
 
         return;
       }
+      console.log(event);
 
       if (event.data.payload.type === 'sleeping') {
         voiceButtonApi.updateStateAfterResponse({ type: 'sleeping' });
