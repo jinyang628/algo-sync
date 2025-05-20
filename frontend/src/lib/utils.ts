@@ -83,8 +83,8 @@ export function extractCodeFromWorkingContainer(): string {
     console.warn(
       '[AlgoSync] No line elements (div.view-line) found in code container. Returning empty string.',
     );
-    
-return '';
+
+    return '';
   }
 
   const linesData: { top: number; text: string }[] = [];
@@ -93,8 +93,8 @@ return '';
     const topStyle = lineElement.style.top;
     if (!topStyle) {
       console.warn('[AlgoSync] Found a line element without a "top" style. Skipping:', lineElement);
-      
-return;
+
+      return;
     }
 
     const topValue = parseInt(topStyle, 10);
@@ -107,8 +107,8 @@ return;
         lineElement,
         '. Skipping this line.',
       );
-      
-return;
+
+      return;
     }
     const lineText = lineElement.innerText;
     linesData.push({ top: topValue, text: lineText });

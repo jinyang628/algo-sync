@@ -24,6 +24,6 @@ export default [
     },
   },
   {
-    ignores: ['dist', 'node_modules', '**/use-toast.ts', 'tailwind.config.js'],
+    ignores: ['dist', 'node_modules', '**/use-toast.ts', 'tailwind.config.js', '.wxt'],
   },
 ];

@@ -41,8 +41,6 @@ export default defineBackground(() => {
         },
       ];
 
-      console.log('prevConversationParts', prevConversationParts);
-
       const mergedRequestBody =
         prevConversationParts &&
         prevConversationParts.contents &&
