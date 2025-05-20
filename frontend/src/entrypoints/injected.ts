@@ -16,6 +16,7 @@ import {
 } from '@/lib/utils';
 
 let globalStatusTextUpdater: ((newText: string) => void) | null = null;
+let currentResizeHandler: (() => void) | null = null;
 
 function createVoiceButton(): HTMLElement {
   let isRecording: boolean = false;
@@ -305,6 +306,11 @@ export default defineUnlistedScript(async () => {
       existingContainer.remove();
     }
 
+    if (currentResizeHandler) {
+      window.removeEventListener('resize', currentResizeHandler);
+      currentResizeHandler = null;
+    }
+
     const mainFixedContainer = document.createElement('div');
     mainFixedContainer.id = 'algo-sync-container';
     mainFixedContainer.style.position = 'fixed';
@@ -330,6 +336,9 @@ export default defineUnlistedScript(async () => {
     mainFixedContainer.style.cursor = 'move';
 
     mainFixedContainer.addEventListener('mousedown', (e) => {
+      if ((e.target as HTMLElement).closest('#voice-recorder-button')) {
+        return;
+      }
       isDragging = true;
       const rect = mainFixedContainer.getBoundingClientRect();
       mainFixedContainer.style.left = `${rect.left}px`;
@@ -351,10 +360,11 @@ export default defineUnlistedScript(async () => {
       let newLeft = e.clientX - dragOffsetX;
       let newTop = e.clientY - dragOffsetY;
 
-      const minLeft = -containerWidth + 30;
-      const maxLeft = vw - 30;
+      const visibleMargin = 30;
+      const minLeft = -containerWidth + visibleMargin;
+      const maxLeft = vw - visibleMargin;
       const minTop = 0;
-      const maxTop = vh - 30;
+      const maxTop = vh - visibleMargin;
 
       newLeft = Math.min(Math.max(newLeft, minLeft), maxLeft);
       newTop = Math.min(Math.max(newTop, minTop), maxTop);
@@ -368,10 +378,60 @@ export default defineUnlistedScript(async () => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     }
+    const adjustContainerOnResize = () => {
+      if (!mainFixedContainer || !document.body.contains(mainFixedContainer)) {
+        window.removeEventListener('resize', adjustContainerOnResize);
+        if (currentResizeHandler === adjustContainerOnResize) {
+          currentResizeHandler = null;
+        }
+        
+return;
+      }
+
+      const rect = mainFixedContainer.getBoundingClientRect();
+      const containerWidth = rect.width;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const visibleMargin = 30;
+
+      const minTopBoundary = 0;
+      const maxTopBoundary = vh - visibleMargin;
+      let currentTopPx = parseFloat(mainFixedContainer.style.top);
+      if (isNaN(currentTopPx)) {
+        currentTopPx = rect.top;
+      }
+      const newTop = Math.min(Math.max(currentTopPx, minTopBoundary), maxTopBoundary);
+      mainFixedContainer.style.top = `${newTop}px`;
+      if (mainFixedContainer.style.right !== 'auto' && !isDragging) {
+        if (rect.left < -containerWidth + visibleMargin) {
+          mainFixedContainer.style.left = `${-containerWidth + visibleMargin}px`;
+          mainFixedContainer.style.right = 'auto';
+        }
+      } else {
+        const minLeftBoundary = -containerWidth + visibleMargin;
+        const maxLeftBoundary = vw - visibleMargin;
+
+        let currentLeftPx = parseFloat(mainFixedContainer.style.left);
+        if (isNaN(currentLeftPx)) {
+          currentLeftPx = rect.left;
+        }
+
+        const newLeft = Math.min(Math.max(currentLeftPx, minLeftBoundary), maxLeftBoundary);
+        mainFixedContainer.style.left = `${newLeft}px`;
+        if (mainFixedContainer.style.right !== 'auto') {
+          mainFixedContainer.style.right = 'auto';
+        }
+      }
+    };
+
+    currentResizeHandler = adjustContainerOnResize;
+    window.addEventListener('resize', currentResizeHandler);
 
     const voiceInterfaceElement = createVoiceButton();
     mainFixedContainer.appendChild(voiceInterfaceElement);
     document.body.appendChild(mainFixedContainer);
+
+    adjustContainerOnResize();
   };
 
   if (document.readyState === 'loading') {
