@@ -99,8 +99,8 @@ export default defineUnlistedScript(async () => {
         }
         mainFixedContainerRef = null;
         adjustContainerLayout = null;
-        
-return;
+
+        return;
       }
       const rect = mainFixedContainer.getBoundingClientRect();
       const containerWidth = rect.width;

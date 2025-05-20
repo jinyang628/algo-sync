@@ -156,7 +156,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       recordButton.style.color = THEME_COLOR;
 
       const tooltipMessage: string =
-        "LeetCode's editor optimizes performance by only rendering lines of code that are currently visible in the viewport. To ensure we capture your entire solution, please make sure all lines of your code are scrolled into view before starting the recording. Resize the window screen or LeetCode's UI components if necessary.";
+        "LeetCode's editor only renders lines of code that are visible in the viewport. To ensure we capture your entire solution, please make sure all lines of your code are scrolled into view before starting the recording. Resize the window screen or LeetCode's UI components if necessary.";
       statusText.innerHTML = `Click to start recording.<br>
         Ensure your code is 
         <span class="tooltip-trigger">fully visible
