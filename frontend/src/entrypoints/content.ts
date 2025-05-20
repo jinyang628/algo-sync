@@ -45,7 +45,7 @@ async function speakTextInPage(text: string): Promise<void> {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 1.0;
-      utterance.pitch = 1.2;
+      utterance.pitch = 1.0;
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         utterance.voice =
@@ -121,7 +121,7 @@ export default defineContentScript({
             window.postMessage({
               type: 'RECORD_BUTTON_STATUS_UPDATE',
               payload: {
-                text: 'Click to record',
+                text: 'Click to start recording.\nMake sure that the entire code is fully visible in the editor.\nResize the window screen if necessary.',
               },
             });
           })

@@ -97,7 +97,8 @@ function createVoiceButton(): HTMLElement {
       recordButton.style.borderColor = WHITE_COLOR;
       recordButton.innerHTML = MIC_SVG;
       recordButton.style.color = THEME_COLOR;
-      statusText.textContent = 'Click to start recording';
+      statusText.textContent =
+        'Click to start recording.\nMake sure that the entire code is fully visible in the editor.\nResize the window screen if necessary.';
       if (!recordButton.classList.contains('pulsating')) {
         recordButton.classList.add('pulsating');
       }
@@ -384,8 +385,8 @@ export default defineUnlistedScript(async () => {
         if (currentResizeHandler === adjustContainerOnResize) {
           currentResizeHandler = null;
         }
-        
-return;
+
+        return;
       }
 
       const rect = mainFixedContainer.getBoundingClientRect();

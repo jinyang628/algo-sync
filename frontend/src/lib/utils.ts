@@ -69,15 +69,44 @@ export function extractProblemDescription(): string {
 
 export function extractCodeFromWorkingContainer(): string {
   const codeContainer = document.querySelector<HTMLDivElement>(
-    'div[class="view-lines monaco-mouse-cursor-text"]',
+    'div.view-lines.monaco-mouse-cursor-text',
   );
+
   if (!codeContainer) {
-    throw new Error('Code container not found');
+    console.error('[AlgoSync] Code container (div.view-lines.monaco-mouse-cursor-text) not found.');
+    throw new Error('Code container not found. Unable to extract code.');
   }
 
-  const descriptionText: string = codeContainer?.innerText.trim() ?? '';
+  const lineElements = codeContainer.querySelectorAll<HTMLDivElement>('div.view-line');
 
-  return descriptionText;
+  if (!lineElements || lineElements.length === 0) {
+    console.warn('[AlgoSync] No line elements (div.view-line) found in code container. Returning empty string.');
+    return '';
+  }
+
+  const linesData: { top: number; text: string }[] = [];
+
+  lineElements.forEach((lineElement) => {
+    const topStyle = lineElement.style.top;
+    if (!topStyle) {
+        console.warn('[AlgoSync] Found a line element without a "top" style. Skipping:', lineElement);
+        return;
+    }
+
+    const topValue = parseInt(topStyle, 10);
+
+    if (isNaN(topValue)) {
+      console.warn('[AlgoSync] Found a line element with unparsable "top" style:', topStyle, 'on element:', lineElement, '. Skipping this line.');
+      return;
+    }
+    const lineText = lineElement.innerText;
+    linesData.push({ top: topValue, text: lineText });
+  });
+
+  linesData.sort((a, b) => a.top - b.top);
+  const extractedCode = linesData.map(line => line.text).join('\n');
+
+  return extractedCode;
 }
 
 export function extractCodeFromAcceptedSubmissionContainer(): string {
