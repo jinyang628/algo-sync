@@ -97,6 +97,7 @@ function createVoiceButton(): HTMLElement {
       recordButton.style.borderColor = WHITE_COLOR;
       recordButton.innerHTML = MIC_SVG;
       recordButton.style.color = THEME_COLOR;
+      // LeetCode website only renders lines in DOM when they are visible
       statusText.textContent =
         'Click to start recording.\nMake sure that the entire code is fully visible in the editor.\nResize the window screen if necessary.';
       if (!recordButton.classList.contains('pulsating')) {
