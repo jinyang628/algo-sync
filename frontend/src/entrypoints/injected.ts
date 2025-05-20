@@ -15,7 +15,6 @@ export default defineUnlistedScript(async () => {
 
     const mainFixedContainer = document.createElement('div');
     mainFixedContainer.id = 'algo-sync-container';
-    // ... (styles for mainFixedContainer)
     mainFixedContainer.style.position = 'fixed';
     mainFixedContainer.style.top = '50px';
     mainFixedContainer.style.right = '10px';
@@ -54,7 +53,6 @@ export default defineUnlistedScript(async () => {
     });
 
     function onMouseMove(e: MouseEvent) {
-      /* ... (drag logic) ... */
       if (!isDragging) return;
       const rect = mainFixedContainer.getBoundingClientRect();
       const containerWidth = rect.width;
@@ -69,14 +67,12 @@ export default defineUnlistedScript(async () => {
       mainFixedContainer.style.top = `${newTop}px`;
     }
     function onMouseUp() {
-      /* ... (drag logic) ... */
       isDragging = false;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     }
 
     const adjustContainerOnResize = () => {
-      /* ... (resize logic) ... */
       if (!mainFixedContainer || !document.body.contains(mainFixedContainer)) {
         window.removeEventListener('resize', adjustContainerOnResize);
         if (currentResizeHandler === adjustContainerOnResize) currentResizeHandler = null;
@@ -130,7 +126,6 @@ export default defineUnlistedScript(async () => {
 
         return;
       }
-      console.log(event.data);
 
       if (event.data.payload.type === 'sleeping') {
         voiceButtonApi.updateStateAfterResponse({ type: 'sleeping' });
