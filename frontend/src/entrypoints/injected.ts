@@ -321,6 +321,7 @@ export default defineUnlistedScript(async () => {
     mainFixedContainer.style.zIndex = '10000';
     mainFixedContainer.style.width = 'auto';
     mainFixedContainer.style.minWidth = '130px';
+    mainFixedContainer.style.maxWidth = '300px';
     mainFixedContainer.style.height = 'auto';
     mainFixedContainer.style.padding = '12px';
     mainFixedContainer.style.backgroundColor = THEME_COLOR;
