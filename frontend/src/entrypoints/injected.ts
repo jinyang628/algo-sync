@@ -15,10 +15,19 @@ import {
   extractProblemNameFromUrl,
 } from '@/lib/utils';
 
+interface VoiceButtonControlsAPI {
+  updateStateAfterResponse: (options: { type: 'sleeping' | 'error' }) => void;
+}
+
+interface CreateVoiceButtonReturn {
+  element: HTMLElement;
+  controls: VoiceButtonControlsAPI;
+}
+
 let globalStatusTextUpdater: ((newText: string) => void) | null = null;
 let currentResizeHandler: (() => void) | null = null;
 
-function createVoiceButton(): HTMLElement {
+function createVoiceButton(): CreateVoiceButtonReturn {
   let isRecording: boolean = false;
   let timerDisplay: string = '00:00';
   let recorder: MediaRecorder | null = null;
@@ -53,14 +62,15 @@ function createVoiceButton(): HTMLElement {
   statusText.style.fontSize = '14px';
   statusText.style.textAlign = 'center';
   statusText.style.color = WHITE_COLOR;
+  statusText.style.lineHeight = '1.4';
 
   globalStatusTextUpdater = (newText: string) => {
     statusText.textContent = newText;
   };
 
-  if (!document.getElementById('algo-sync-pulsate-style')) {
+  if (!document.getElementById('algo-sync-styles')) {
     const styleElement = document.createElement('style');
-    styleElement.id = 'algo-sync-pulsate-style';
+    styleElement.id = 'algo-sync-styles';
     styleElement.textContent = `
       @keyframes algo-sync-pulsate {
         0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); }
@@ -68,15 +78,53 @@ function createVoiceButton(): HTMLElement {
         100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
       }
       #voice-recorder-button.pulsating {
-        /* Ensure transform origin is center for scale */
         transform-origin: center;
         animation: algo-sync-pulsate 1.5s infinite;
+      }
+      .tooltip-trigger {
+        text-decoration: underline dashed ${WHITE_COLOR};
+        cursor: help;
+        position: relative;
+      }
+      .tooltip-trigger .tooltip-text {
+        visibility: hidden;
+        width: 250px;
+        background-color: #333;
+        color: #fff;
+        text-align: left;
+        padding: 8px 10px;
+        border-radius: 6px;
+        position: absolute;
+        z-index: 10001;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -125px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 12px;
+        line-height: 1.3;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      }
+      .tooltip-trigger:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+      .tooltip-trigger .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
       }
     `;
     document.head.appendChild(styleElement);
   }
 
   function updateButtonAppearance() {
+    recordButton.disabled = false;
     if (isRecording) {
       recordButton.style.backgroundColor = THEME_COLOR_DARKER;
       recordButton.style.borderColor = THEME_COLOR_DARKER;
@@ -85,7 +133,6 @@ function createVoiceButton(): HTMLElement {
       statusText.textContent = timerDisplay;
       recordButton.classList.remove('pulsating');
       recordButton.style.animationName = '';
-
       recordButton.onmouseover = () => {
         recordButton.style.backgroundColor = THEME_COLOR;
       };
@@ -97,14 +144,20 @@ function createVoiceButton(): HTMLElement {
       recordButton.style.borderColor = WHITE_COLOR;
       recordButton.innerHTML = MIC_SVG;
       recordButton.style.color = THEME_COLOR;
-      // LeetCode website only renders lines in DOM when they are visible
-      statusText.textContent =
-        'Click to start recording.\nMake sure that the entire code is fully visible in the editor.\nResize the window screen if necessary.';
+
+      const tooltipMessage: string =
+        "LeetCode's editor optimizes performance by only rendering lines of code that are currently visible in the viewport. To ensure we capture your entire solution, please make sure all lines of your code are scrolled into view before starting the recording. Resize the window screen or LeetCode's UI components if necessary.";
+      statusText.innerHTML = `Click to start recording.<br>
+        Ensure your code is 
+        <span class="tooltip-trigger">fully visible
+          <span class="tooltip-text">${tooltipMessage}</span>
+        </span> 
+        in the editor.<br>`;
+
       if (!recordButton.classList.contains('pulsating')) {
         recordButton.classList.add('pulsating');
       }
       recordButton.style.animationName = 'algo-sync-pulsate';
-
       recordButton.onmouseover = () => {
         recordButton.style.backgroundColor = LIGHT_GRAY_HOVER_BG;
       };
@@ -125,7 +178,6 @@ function createVoiceButton(): HTMLElement {
       clearInterval(timerInterval);
       timerInterval = undefined;
     }
-
     isRecording = false;
     timerDisplay = '00:00';
 
@@ -134,17 +186,18 @@ function createVoiceButton(): HTMLElement {
       stream = null;
     }
 
-    updateButtonAppearance();
-
     if (audioChunks.length === 0) {
       recorder = null;
-
+      updateButtonAppearance();
       return;
     }
 
+    recordButton.disabled = true;
     if (globalStatusTextUpdater) {
       globalStatusTextUpdater('Waiting for response. Do not click out of the tab');
     }
+
+    updateButtonAppearance();
 
     const code: string = extractCodeFromWorkingContainer();
     const problemName: string = extractProblemNameFromUrl(window.location.href);
@@ -156,9 +209,9 @@ function createVoiceButton(): HTMLElement {
       const audioDataUrl = reader.result as string;
       const audioRequest = audioRequestSchema.parse({
         audioDataUrl: audioDataUrl,
-        code: code,
-        problemName: problemName,
-        problemDescription: problemDescription,
+        code,
+        problemName,
+        problemDescription,
       });
       window.postMessage(
         {
@@ -171,6 +224,10 @@ function createVoiceButton(): HTMLElement {
     };
     reader.onerror = (error) => {
       console.error('[AlgoSync] FileReader error:', error);
+      if (globalStatusTextUpdater)
+        globalStatusTextUpdater('Error processing audio. Check console.');
+      updateButtonAppearance();
+      recordButton.disabled = false;
     };
     reader.readAsDataURL(audioBlob);
 
@@ -197,9 +254,7 @@ function createVoiceButton(): HTMLElement {
   };
 
   const startRecording = async () => {
-    if (recorder && recorder.state === 'recording') {
-      recorder.stop();
-    }
+    if (recorder && recorder.state === 'recording') recorder.stop();
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       stream = null;
@@ -212,36 +267,27 @@ function createVoiceButton(): HTMLElement {
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
       const options = { mimeType: 'audio/webm' };
       recorder = new MediaRecorder(stream, options);
-
       recorder.addEventListener('dataavailable', handleDataAvailable);
       recorder.addEventListener('stop', handleStop);
       recorder.onerror = (event) => {
         console.error('[AlgoSync] MediaRecorder error:', (event as ErrorEvent).error || event);
-        if (isRecording) {
-          stopRecording();
-        }
+        if (isRecording) stopRecording();
         alert(
           'An error occurred with the media recorder: ' +
             ((event as ErrorEvent).error?.message || 'Unknown error'),
         );
       };
-
       recorder.start();
       isRecording = true;
-
       let seconds = 0;
       timerDisplay = '00:00';
       updateButtonAppearance();
-
       timerInterval = window.setInterval(() => {
         seconds++;
         timerDisplay = convertSecondsToTimer(seconds);
-        if (isRecording) {
-          statusText.textContent = timerDisplay;
-        }
+        if (isRecording) statusText.textContent = timerDisplay;
       }, 1000);
     } catch (err: any) {
       console.error('[AlgoSync] Error starting recording:', err);
@@ -251,13 +297,10 @@ function createVoiceButton(): HTMLElement {
         stream = null;
       }
       updateButtonAppearance();
-
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        alert(
-          'Microphone access was denied. Please enable it for this site in your browser settings and for the extension.\n\nTo check extension permissions:\n1. Go to chrome://extensions\n2. Find this extension and click "Details".\n3. Scroll to "Site settings" or "Permissions" and ensure microphone access is allowed for leetcode.com.',
-        );
+        alert('Microphone access was denied...');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        alert('No microphone found. Please ensure a microphone is connected and enabled.');
+        alert('No microphone found...');
       } else {
         alert(`Could not start recording: ${err.message}`);
       }
@@ -265,17 +308,12 @@ function createVoiceButton(): HTMLElement {
   };
 
   recordButton.addEventListener('click', () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (isRecording) stopRecording();
+    else startRecording();
   });
-
   recordButton.addEventListener('mousedown', () => {
     recordButton.style.transform = 'scale(0.92)';
   });
-
   recordButton.addEventListener('mouseup', () => {
     recordButton.style.transform = 'scale(1)';
     if (recordButton.matches(':hover')) {
@@ -284,30 +322,47 @@ function createVoiceButton(): HTMLElement {
     }
   });
 
+  const _updateStateAndUIAfterResponse = (options: { type: 'sleeping' | 'error' }) => {
+    if (isRecording) {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = undefined;
+    }
+    isRecording = false;
+    timerDisplay = '00:00';
+
+    updateButtonAppearance();
+    recordButton.disabled = false;
+
+    if (options.type === 'error' && globalStatusTextUpdater) {
+      globalStatusTextUpdater('Error. Please try recording again.');
+    }
+  };
+
   updateButtonAppearance();
 
   voiceUIContainer.appendChild(recordButton);
   voiceUIContainer.appendChild(statusText);
 
   window.addEventListener('beforeunload', () => {
-    if (isRecording && recorder) {
-      recorder.stop();
-    }
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
+    if (isRecording && recorder && recorder.state === 'recording') recorder.stop();
+    if (stream) stream.getTracks().forEach((track) => track.stop());
   });
 
-  return voiceUIContainer;
+  return {
+    element: voiceUIContainer,
+    controls: {
+      updateStateAfterResponse: _updateStateAndUIAfterResponse,
+    },
+  };
 }
+
+// Store the voice button API at a higher scope
+let voiceButtonApi: VoiceButtonControlsAPI | null = null;
 
 export default defineUnlistedScript(async () => {
   const initAndInjectVoiceButton = () => {
     const existingContainer = document.getElementById('algo-sync-container');
-    if (existingContainer) {
-      existingContainer.remove();
-    }
-
+    if (existingContainer) existingContainer.remove();
     if (currentResizeHandler) {
       window.removeEventListener('resize', currentResizeHandler);
       currentResizeHandler = null;
@@ -315,6 +370,7 @@ export default defineUnlistedScript(async () => {
 
     const mainFixedContainer = document.createElement('div');
     mainFixedContainer.id = 'algo-sync-container';
+    // ... (styles for mainFixedContainer)
     mainFixedContainer.style.position = 'fixed';
     mainFixedContainer.style.top = '50px';
     mainFixedContainer.style.right = '10px';
@@ -335,13 +391,13 @@ export default defineUnlistedScript(async () => {
     let isDragging = false;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
-
     mainFixedContainer.style.cursor = 'move';
-
     mainFixedContainer.addEventListener('mousedown', (e) => {
-      if ((e.target as HTMLElement).closest('#voice-recorder-button')) {
+      if (
+        (e.target as HTMLElement).closest('#voice-recorder-button') ||
+        (e.target as HTMLElement).closest('.tooltip-trigger')
+      )
         return;
-      }
       isDragging = true;
       const rect = mainFixedContainer.getBoundingClientRect();
       mainFixedContainer.style.left = `${rect.left}px`;
@@ -353,87 +409,61 @@ export default defineUnlistedScript(async () => {
     });
 
     function onMouseMove(e: MouseEvent) {
+      /* ... (drag logic) ... */
       if (!isDragging) return;
-
       const rect = mainFixedContainer.getBoundingClientRect();
       const containerWidth = rect.width;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-
       let newLeft = e.clientX - dragOffsetX;
       let newTop = e.clientY - dragOffsetY;
-
       const visibleMargin = 30;
-      const minLeft = -containerWidth + visibleMargin;
-      const maxLeft = vw - visibleMargin;
-      const minTop = 0;
-      const maxTop = vh - visibleMargin;
-
-      newLeft = Math.min(Math.max(newLeft, minLeft), maxLeft);
-      newTop = Math.min(Math.max(newTop, minTop), maxTop);
-
+      newLeft = Math.min(Math.max(newLeft, -containerWidth + visibleMargin), vw - visibleMargin);
+      newTop = Math.min(Math.max(newTop, 0), vh - visibleMargin);
       mainFixedContainer.style.left = `${newLeft}px`;
       mainFixedContainer.style.top = `${newTop}px`;
     }
-
     function onMouseUp() {
+      /* ... (drag logic) ... */
       isDragging = false;
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
     }
+
     const adjustContainerOnResize = () => {
+      /* ... (resize logic) ... */
       if (!mainFixedContainer || !document.body.contains(mainFixedContainer)) {
         window.removeEventListener('resize', adjustContainerOnResize);
-        if (currentResizeHandler === adjustContainerOnResize) {
-          currentResizeHandler = null;
-        }
-
+        if (currentResizeHandler === adjustContainerOnResize) currentResizeHandler = null;
         return;
       }
-
       const rect = mainFixedContainer.getBoundingClientRect();
       const containerWidth = rect.width;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const visibleMargin = 30;
-
-      const minTopBoundary = 0;
-      const maxTopBoundary = vh - visibleMargin;
       let currentTopPx = parseFloat(mainFixedContainer.style.top);
-      if (isNaN(currentTopPx)) {
-        currentTopPx = rect.top;
-      }
-      const newTop = Math.min(Math.max(currentTopPx, minTopBoundary), maxTopBoundary);
-      mainFixedContainer.style.top = `${newTop}px`;
+      if (isNaN(currentTopPx)) currentTopPx = rect.top;
+      mainFixedContainer.style.top = `${Math.min(Math.max(currentTopPx, 0), vh - visibleMargin)}px`;
       if (mainFixedContainer.style.right !== 'auto' && !isDragging) {
         if (rect.left < -containerWidth + visibleMargin) {
           mainFixedContainer.style.left = `${-containerWidth + visibleMargin}px`;
           mainFixedContainer.style.right = 'auto';
         }
       } else {
-        const minLeftBoundary = -containerWidth + visibleMargin;
-        const maxLeftBoundary = vw - visibleMargin;
-
         let currentLeftPx = parseFloat(mainFixedContainer.style.left);
-        if (isNaN(currentLeftPx)) {
-          currentLeftPx = rect.left;
-        }
-
-        const newLeft = Math.min(Math.max(currentLeftPx, minLeftBoundary), maxLeftBoundary);
-        mainFixedContainer.style.left = `${newLeft}px`;
-        if (mainFixedContainer.style.right !== 'auto') {
-          mainFixedContainer.style.right = 'auto';
-        }
+        if (isNaN(currentLeftPx)) currentLeftPx = rect.left;
+        mainFixedContainer.style.left = `${Math.min(Math.max(currentLeftPx, -containerWidth + visibleMargin), vw - visibleMargin)}px`;
+        if (mainFixedContainer.style.right !== 'auto') mainFixedContainer.style.right = 'auto';
       }
     };
-
     currentResizeHandler = adjustContainerOnResize;
     window.addEventListener('resize', currentResizeHandler);
 
-    const voiceInterfaceElement = createVoiceButton();
-    mainFixedContainer.appendChild(voiceInterfaceElement);
+    const voiceButtonInstance = createVoiceButton();
+    voiceButtonApi = voiceButtonInstance.controls; // Store the API
+    mainFixedContainer.appendChild(voiceButtonInstance.element);
     document.body.appendChild(mainFixedContainer);
-
     adjustContainerOnResize();
   };
 
@@ -444,22 +474,24 @@ export default defineUnlistedScript(async () => {
   }
 
   window.addEventListener('message', (event) => {
-    if (event.source !== window && event.origin !== window.location.origin) {
-      console.log(
-        '[AlgoSync Injected] Ignoring message from different origin/source:',
-        event.origin,
-      );
-
+    if (event.source !== window || event.origin !== window.location.origin) {
       return;
     }
 
     if (event.data && event.data.type === 'RECORD_BUTTON_STATUS_UPDATE') {
-      if (!globalStatusTextUpdater) {
-        console.error('[AlgoSync Injected] No global status text updater found');
-
+      if (!voiceButtonApi) {
+        console.error('[AlgoSync Injected] Voice button API not initialized.');
         return;
       }
-      globalStatusTextUpdater(event.data.payload.text);
+      console.log(event.data)
+
+      if (event.data.payload.type === 'sleeping') {
+        voiceButtonApi.updateStateAfterResponse({ type: 'sleeping' });
+      } else if (event.data.payload.type === 'error') {
+        voiceButtonApi.updateStateAfterResponse({ type: 'error' });
+      } else {
+        console.error('[AlgoSync Injected] Unknown payload type:', event.data.payload.type);
+      }
     }
   });
 });

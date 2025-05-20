@@ -121,7 +121,7 @@ export default defineContentScript({
             window.postMessage({
               type: 'RECORD_BUTTON_STATUS_UPDATE',
               payload: {
-                text: 'Click to start recording.\nMake sure that the entire code is fully visible in the editor.\nResize the window screen if necessary.',
+                type: 'sleeping',
               },
             });
           })
@@ -133,7 +133,7 @@ export default defineContentScript({
             window.postMessage({
               type: 'RECORD_BUTTON_STATUS_UPDATE',
               payload: {
-                text: 'Error. Please try recording again.',
+                type: 'error',
               },
             });
           });
