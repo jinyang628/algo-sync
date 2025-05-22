@@ -10,22 +10,13 @@ import {
   extractCodeFromAcceptedSubmissionContainer,
   extractProblemNameFromUrl,
   identifyLanguage as identifyLanguageSuffix,
+  isSubmissionAccepted,
 } from '@/lib/utils';
 
 import '@/styles/globals.css';
 
-function isSubmissionAccepted(): boolean {
-  const resultElement = document.querySelector('[data-e2e-locator="submission-result"]');
-
-  if (!resultElement) {
-    console.error('Submission result element not found.');
-
-    return false;
-  }
-  console.log('Submission result element found!');
-
-  return true;
-}
+let speechResumeIntervalId: number | null = null;
+const SPEECH_RESUME_INTERVAL_DURATION = 14000;
 
 async function speakTextInPage(text: string): Promise<void> {
   if (!('speechSynthesis' in window)) {
@@ -35,17 +26,24 @@ async function speakTextInPage(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!text) {
       console.warn('[AlgoSync ContentScript] No text provided to speak.');
+      if (speechResumeIntervalId !== null) {
+        clearInterval(speechResumeIntervalId);
+        speechResumeIntervalId = null;
+      }
+      resolve();
 
       return;
     }
-
     try {
       window.speechSynthesis.cancel();
+      if (speechResumeIntervalId !== null) {
+        clearInterval(speechResumeIntervalId);
+        speechResumeIntervalId = null;
+      }
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 1.0;
-      utterance.pitch = 1.0;
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         utterance.voice =
@@ -53,17 +51,40 @@ async function speakTextInPage(text: string): Promise<void> {
       }
 
       utterance.onend = () => {
+        if (speechResumeIntervalId !== null) {
+          clearInterval(speechResumeIntervalId);
+          speechResumeIntervalId = null;
+          console.log('[AlgoSync ContentScript] Cleared speech resume interval on utterance end.');
+        }
         resolve();
       };
+
       utterance.onerror = (event) => {
-        console.error('[AlgoSync ContentScript] SpeechSynthesisUtterance error:', event.error);
+        if (speechResumeIntervalId !== null) {
+          clearInterval(speechResumeIntervalId);
+          speechResumeIntervalId = null;
+        }
         reject(event.error);
       };
 
       console.log('[AlgoSync Response] Speaking text:', text);
       window.speechSynthesis.speak(utterance);
+
+      speechResumeIntervalId = window.setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+          if (speechResumeIntervalId !== null) {
+            clearInterval(speechResumeIntervalId);
+            speechResumeIntervalId = null;
+          }
+        } else {
+          window.speechSynthesis.resume();
+        }
+      }, SPEECH_RESUME_INTERVAL_DURATION);
     } catch (error) {
-      console.error('[AlgoSync ContentScript] Error in speakTextInPage:', error);
+      if (speechResumeIntervalId !== null) {
+        clearInterval(speechResumeIntervalId);
+        speechResumeIntervalId = null;
+      }
       reject(error);
     }
   });
@@ -145,7 +166,6 @@ export default defineContentScript({
       }
     });
 
-    // Create mutation observer to watch for DOM changes
     const observer = new MutationObserver(async () => {
       if (isSubmissionAccepted()) {
         observer.disconnect();
@@ -159,7 +179,6 @@ export default defineContentScript({
         );
       }
     });
-    // Find and watch targetDiv after submit button is clicked
     const submitButton = document.querySelector('[data-e2e-locator="console-submit-button"]');
     if (!submitButton) {
       console.error('Submit button not found.');
@@ -173,12 +192,6 @@ export default defineContentScript({
         childList: true,
         subtree: true,
       });
-    });
-    chrome.runtime.onMessage.addListener((request) => {
-      switch (request.action) {
-        default:
-          break;
-      }
     });
   },
 });

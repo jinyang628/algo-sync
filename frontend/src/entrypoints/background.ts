@@ -82,8 +82,7 @@ export default defineBackground(() => {
           const timeoutId = setTimeout(() => {
             console.warn('[AlgoSync Background] Gemini API request timed out.');
             controller.abort();
-          }, 120000); // 120 seconds timeout, adjust as needed
-
+          }, 120000); // 120 seconds timeout
           const response = await fetch(getLlmApiUrl(geminiApiKey), {
             method: 'POST',
             headers: {
@@ -98,7 +97,7 @@ export default defineBackground(() => {
           if (!response.ok) {
             const errorBody = await response
               .json()
-              .catch(() => ({ error: { message: response.statusText } })); // Graceful fallback if error body isn't JSON
+              .catch(() => ({ error: { message: response.statusText } }));
             throw new Error(
               `Gemini API request failed with status ${response.status}: ${errorBody.error?.message || response.statusText}`,
             );

@@ -15,6 +15,19 @@ export function formatProblemName(problemName: string): string {
   return problemName.toLowerCase().replace(/\s+/g, '_');
 }
 
+export function isSubmissionAccepted(): boolean {
+  const resultElement = document.querySelector('[data-e2e-locator="submission-result"]');
+
+  if (!resultElement) {
+    console.error('Submission result element not found.');
+
+    return false;
+  }
+  console.log('Submission result element found!');
+
+  return true;
+}
+
 export function identifyLanguage(): Language {
   const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
   if (!codeContainer) {
