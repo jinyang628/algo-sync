@@ -179,8 +179,8 @@ export default defineUnlistedScript(async () => {
         contentContainerRef = null;
         ghostButtonElement = null;
         adjustLayoutCallback = null;
-        
-return;
+
+        return;
       }
       const rect = draggableContainerRef.getBoundingClientRect();
       const containerWidth = rect.width;
@@ -269,8 +269,8 @@ return;
     if (event.data && event.data.type === 'RECORD_BUTTON_STATUS_UPDATE') {
       if (!voiceButtonApi) {
         console.error('[AlgoSync Injected] Voice button API not initialized.');
-        
-return;
+
+        return;
       }
       if (event.data.payload.type === 'sleeping') {
         voiceButtonApi.updateStateAfterResponse({ type: 'sleeping' });
