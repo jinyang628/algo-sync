@@ -27,6 +27,19 @@ export const THEME_COLOR_DARKER = '#6B238E';
 export const WHITE_COLOR = '#FFFFFF';
 export const LIGHT_GRAY_HOVER_BG = '#f0f0f0';
 
+const MESSAGE_SLEEPING_TOOLTIP =
+  "LeetCode's editor only renders lines of code that are visible in the viewport. To ensure we capture your entire solution, please make sure all lines of your code are scrolled into view before starting the recording. Resize the window screen or LeetCode's UI components if necessary.";
+const MESSAGE_SLEEPING_HTML = `Click to start recording.<br>
+  Ensure your code is 
+  <span class="tooltip-trigger">fully visible
+    <span class="tooltip-text">${MESSAGE_SLEEPING_TOOLTIP}</span>
+  </span> 
+  in the editor.<br>`;
+const MESSAGE_WAITING = 'Processing audio... Please wait.';
+const MESSAGE_ERROR_GENERAL = 'An error occurred. Please try again.';
+const MESSAGE_ERROR_FILEREADER = 'Error reading audio data. Please try again.';
+const MESSAGE_ERROR_MEDIARECORDER_PREFIX = 'Recorder error: ';
+
 export interface VoiceButtonControlsAPI {
   updateStateAfterResponse: (options: { type: 'sleeping' | 'error' }) => void;
 }
@@ -36,9 +49,10 @@ interface CreateVoiceButtonReturn {
   controls: VoiceButtonControlsAPI;
 }
 
+type RecorderState = 'sleeping' | 'recording' | 'waiting' | 'error';
+
 export function createVoiceButton(): CreateVoiceButtonReturn {
-  let globalStatusTextUpdater: ((newText: string) => void) | null = null;
-  let isRecording: boolean = false;
+  let currentButtonState: RecorderState = 'sleeping';
   let timerDisplay: string = '00:00';
   let recorder: MediaRecorder | null = null;
   let stream: MediaStream | null = null;
@@ -73,10 +87,6 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   statusText.style.textAlign = 'center';
   statusText.style.color = WHITE_COLOR;
   statusText.style.lineHeight = '1.4';
-
-  globalStatusTextUpdater = (newText: string) => {
-    statusText.textContent = newText;
-  };
 
   if (!document.getElementById('algo-sync-styles')) {
     const styleElement = document.createElement('style');
@@ -134,46 +144,65 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   }
 
   function updateButtonAppearance() {
-    recordButton.disabled = false;
-    if (isRecording) {
-      recordButton.style.backgroundColor = THEME_COLOR_DARKER;
-      recordButton.style.borderColor = THEME_COLOR_DARKER;
-      recordButton.innerHTML = MIC_OFF_SVG;
-      recordButton.style.color = WHITE_COLOR;
-      statusText.textContent = timerDisplay;
-      recordButton.classList.remove('pulsating');
-      recordButton.style.animationName = '';
-      recordButton.onmouseover = () => {
-        recordButton.style.backgroundColor = THEME_COLOR;
-      };
-      recordButton.onmouseout = () => {
-        recordButton.style.backgroundColor = THEME_COLOR_DARKER;
-      };
-    } else {
-      recordButton.style.backgroundColor = WHITE_COLOR;
-      recordButton.style.borderColor = WHITE_COLOR;
-      recordButton.innerHTML = MIC_SVG;
-      recordButton.style.color = THEME_COLOR;
+    recordButton.disabled = false; // Default, override in specific states
+    recordButton.classList.remove('pulsating');
+    recordButton.style.animationName = '';
 
-      const tooltipMessage: string =
-        "LeetCode's editor only renders lines of code that are visible in the viewport. To ensure we capture your entire solution, please make sure all lines of your code are scrolled into view before starting the recording. Resize the window screen or LeetCode's UI components if necessary.";
-      statusText.innerHTML = `Click to start recording.<br>
-        Ensure your code is 
-        <span class="tooltip-trigger">fully visible
-          <span class="tooltip-text">${tooltipMessage}</span>
-        </span> 
-        in the editor.<br>`;
-
-      if (!recordButton.classList.contains('pulsating')) {
-        recordButton.classList.add('pulsating');
-      }
-      recordButton.style.animationName = 'algo-sync-pulsate';
-      recordButton.onmouseover = () => {
-        recordButton.style.backgroundColor = LIGHT_GRAY_HOVER_BG;
-      };
-      recordButton.onmouseout = () => {
+    switch (currentButtonState) {
+      case 'sleeping':
         recordButton.style.backgroundColor = WHITE_COLOR;
-      };
+        recordButton.style.borderColor = WHITE_COLOR;
+        recordButton.innerHTML = MIC_SVG;
+        recordButton.style.color = THEME_COLOR;
+        statusText.innerHTML = MESSAGE_SLEEPING_HTML;
+        recordButton.classList.add('pulsating');
+        recordButton.style.animationName = 'algo-sync-pulsate';
+        recordButton.onmouseover = () => {
+          recordButton.style.backgroundColor = LIGHT_GRAY_HOVER_BG;
+        };
+        recordButton.onmouseout = () => {
+          recordButton.style.backgroundColor = WHITE_COLOR;
+        };
+        break;
+
+      case 'recording':
+        recordButton.style.backgroundColor = THEME_COLOR_DARKER;
+        recordButton.style.borderColor = THEME_COLOR_DARKER;
+        recordButton.innerHTML = MIC_OFF_SVG;
+        recordButton.style.color = WHITE_COLOR;
+        statusText.textContent = timerDisplay; // Updated by timerInterval
+        recordButton.onmouseover = () => {
+          recordButton.style.backgroundColor = THEME_COLOR;
+        };
+        recordButton.onmouseout = () => {
+          recordButton.style.backgroundColor = THEME_COLOR_DARKER;
+        };
+        break;
+
+      case 'waiting':
+        recordButton.style.backgroundColor = THEME_COLOR_DARKER;
+        recordButton.style.borderColor = THEME_COLOR_DARKER;
+        recordButton.innerHTML = MIC_OFF_SVG;
+        recordButton.style.color = WHITE_COLOR;
+        statusText.textContent = MESSAGE_WAITING;
+        recordButton.disabled = true;
+        recordButton.onmouseover = null;
+        recordButton.onmouseout = null;
+        break;
+
+      case 'error':
+        recordButton.style.backgroundColor = WHITE_COLOR;
+        recordButton.style.borderColor = WHITE_COLOR;
+        recordButton.innerHTML = MIC_SVG;
+        recordButton.style.color = THEME_COLOR;
+        statusText.textContent = MESSAGE_ERROR_GENERAL;
+        recordButton.onmouseover = () => {
+          recordButton.style.backgroundColor = LIGHT_GRAY_HOVER_BG;
+        };
+        recordButton.onmouseout = () => {
+          recordButton.style.backgroundColor = WHITE_COLOR;
+        };
+        break;
     }
   }
 
@@ -183,33 +212,94 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     }
   };
 
-  const handleStop = () => {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = undefined;
-    }
-    isRecording = false;
+  // Named function for attaching/detaching MediaRecorder error handler
+  const onRecorderError = (event: Event) => {
+    const errorEvent = event as ErrorEvent;
+    console.error('[AlgoSync] MediaRecorder error:', errorEvent.error || event);
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = undefined;
     timerDisplay = '00:00';
 
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       stream = null;
     }
+    if (recorder) {
+      recorder.removeEventListener('dataavailable', handleDataAvailable);
+      recorder.removeEventListener('stop', handleStop);
+      recorder.removeEventListener('error', onRecorderError); // Remove self
+    }
+    recorder = null;
+    audioChunks = [];
 
-    if (audioChunks.length === 0) {
+    currentButtonState = 'error';
+    updateButtonAppearance(); // Sets general error message
+    statusText.textContent = `${MESSAGE_ERROR_MEDIARECORDER_PREFIX}${errorEvent.error?.message || 'Unknown error'}. Try again.`;
+
+    alert(
+      'An error occurred with the media recorder: ' +
+        (errorEvent.error?.message || 'Unknown error'),
+    );
+  };
+
+  const handleStop = () => {
+    // MediaRecorder 'stop' event handler
+    if (currentButtonState === 'error') {
+      console.warn(
+        "[AlgoSync] MediaRecorder 'stop' event handled when state was already 'error'. Ignoring.",
+      );
+      // Ensure resources are cleaned up if somehow missed, though onRecorderError should handle it.
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = undefined;
+      if (stream) stream.getTracks().forEach((track) => track.stop());
+      stream = null;
       recorder = null;
+      audioChunks = [];
+      
+return;
+    }
+
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = undefined;
+    }
+
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      stream = null;
+    }
+
+    if (currentButtonState !== 'waiting') {
+      console.warn(
+        `[AlgoSync] MediaRecorder 'stop' event handled when state was '${currentButtonState}'.`,
+      );
+      if (audioChunks.length > 0) {
+        currentButtonState = 'waiting';
+        updateButtonAppearance(); // Ensure UI reflects waiting state
+      } else {
+        // No audio and not properly in 'waiting' state, revert to sleeping
+        currentButtonState = 'sleeping';
+        updateButtonAppearance();
+        recorder = null;
+        audioChunks = [];
+        
+return;
+      }
+    }
+
+    // If state is 'waiting' but no audio chunks, revert to sleeping.
+    if (audioChunks.length === 0) {
+      console.warn('[AlgoSync] No audio data recorded or chunks are empty in "waiting" state.');
+      currentButtonState = 'sleeping';
       updateButtonAppearance();
-
-      return;
+      recorder = null;
+      audioChunks = [];
+      
+return;
     }
 
-    recordButton.disabled = true;
-    if (globalStatusTextUpdater) {
-      globalStatusTextUpdater('Waiting for response. Do not click out of the tab');
-    }
-
-    updateButtonAppearance();
-
+    // Proceed with audio processing (state is 'waiting', button is disabled)
     const code: string = extractCodeFromWorkingContainer();
     const problemName: string = extractProblemNameFromUrl(window.location.href);
     const problemDescription: string = extractProblemDescription();
@@ -235,10 +325,9 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     };
     reader.onerror = (error) => {
       console.error('[AlgoSync] FileReader error:', error);
-      if (globalStatusTextUpdater)
-        globalStatusTextUpdater('Error processing audio. Check console.');
+      currentButtonState = 'error';
       updateButtonAppearance();
-      recordButton.disabled = false;
+      statusText.textContent = MESSAGE_ERROR_FILEREADER;
     };
     reader.readAsDataURL(audioBlob);
 
@@ -248,25 +337,39 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
 
   const stopRecording = () => {
     if (recorder && recorder.state === 'recording') {
+      currentButtonState = 'waiting';
+      updateButtonAppearance();
       recorder.stop();
-      globalStatusTextUpdater('Waiting for response...');
     } else {
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = undefined;
-      isRecording = false;
-      timerDisplay = '00:00';
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
       }
-      audioChunks = [];
+      // If recorder exists but not 'recording' (e.g. 'inactive'), remove listeners
+      if (recorder) {
+        recorder.removeEventListener('dataavailable', handleDataAvailable);
+        recorder.removeEventListener('stop', handleStop);
+        recorder.removeEventListener('error', onRecorderError);
+      }
       recorder = null;
+      audioChunks = [];
+      timerDisplay = '00:00';
+      currentButtonState = 'sleeping';
       updateButtonAppearance();
     }
   };
 
   const startRecording = async () => {
-    if (recorder && recorder.state === 'recording') recorder.stop();
+    // Clean up any previous state/resources
+    if (recorder) {
+      if (recorder.state === 'recording') recorder.stop(); // Should trigger handleStop eventually
+      recorder.removeEventListener('dataavailable', handleDataAvailable);
+      recorder.removeEventListener('stop', handleStop);
+      recorder.removeEventListener('error', onRecorderError);
+      recorder = null;
+    }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       stream = null;
@@ -276,6 +379,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       clearInterval(timerInterval);
       timerInterval = undefined;
     }
+    timerDisplay = '00:00';
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -283,36 +387,40 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       recorder = new MediaRecorder(stream, options);
       recorder.addEventListener('dataavailable', handleDataAvailable);
       recorder.addEventListener('stop', handleStop);
-      recorder.onerror = (event) => {
-        console.error('[AlgoSync] MediaRecorder error:', (event as ErrorEvent).error || event);
-        if (isRecording) stopRecording();
-        alert(
-          'An error occurred with the media recorder: ' +
-            ((event as ErrorEvent).error?.message || 'Unknown error'),
-        );
-      };
+      recorder.addEventListener('error', onRecorderError);
+
       recorder.start();
-      isRecording = true;
+      currentButtonState = 'recording';
       let seconds = 0;
-      timerDisplay = '00:00';
-      updateButtonAppearance();
+      updateButtonAppearance(); // Show "00:00" and recording UI
+
       timerInterval = window.setInterval(() => {
         seconds++;
         timerDisplay = convertSecondsToTimer(seconds);
-        if (isRecording) statusText.textContent = timerDisplay;
+        if (currentButtonState === 'recording') {
+          statusText.textContent = timerDisplay;
+        } else {
+          clearInterval(timerInterval); // State changed, stop timer
+          timerInterval = undefined;
+        }
       }, 1000);
     } catch (err: any) {
       console.error('[AlgoSync] Error starting recording:', err);
-      isRecording = false;
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
       }
+      currentButtonState = 'sleeping'; // Revert to sleeping after alert
       updateButtonAppearance();
+
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        alert('Microphone access was denied...');
+        alert('Microphone access was denied. Please check your browser settings.');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        alert('No microphone found...');
+        alert('No microphone found. Please ensure one is connected and enabled.');
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        alert(
+          `Could not start recording due to an issue with the microphone: ${err.message}. It might be in use by another application or hardware issues.`,
+        );
       } else {
         alert(`Could not start recording: ${err.message}`);
       }
@@ -320,13 +428,20 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   };
 
   recordButton.addEventListener('click', () => {
-    if (isRecording) stopRecording();
-    else startRecording();
+    if (currentButtonState === 'recording') {
+      stopRecording();
+    } else if (currentButtonState === 'sleeping' || currentButtonState === 'error') {
+      startRecording();
+    }
+    // Button is disabled in 'waiting' state, so no click handling needed for it.
   });
+
   recordButton.addEventListener('mousedown', () => {
+    if (recordButton.disabled) return;
     recordButton.style.transform = 'scale(0.92)';
   });
   recordButton.addEventListener('mouseup', () => {
+    if (recordButton.disabled) return;
     recordButton.style.transform = 'scale(1)';
     if (recordButton.matches(':hover')) {
       const event = new MouseEvent('mouseover', { bubbles: true, cancelable: true });
@@ -335,29 +450,28 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   });
 
   const _updateStateAndUIAfterResponse = (options: { type: 'sleeping' | 'error' }) => {
-    if (isRecording) {
+    if (currentButtonState === 'recording') {
+      // Should ideally be 'waiting'
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = undefined;
     }
-    isRecording = false;
-    timerDisplay = '00:00';
-
+    timerDisplay = '00:00'; // Reset for next potential recording
+    currentButtonState = options.type;
     updateButtonAppearance();
-    recordButton.disabled = false;
-
-    if (options.type === 'error' && globalStatusTextUpdater) {
-      globalStatusTextUpdater('Error. Please try recording again.');
-    }
   };
 
-  updateButtonAppearance();
+  updateButtonAppearance(); // Initial UI setup
 
   voiceUIContainer.appendChild(recordButton);
   voiceUIContainer.appendChild(statusText);
 
   window.addEventListener('beforeunload', () => {
-    if (isRecording && recorder && recorder.state === 'recording') recorder.stop();
-    if (stream) stream.getTracks().forEach((track) => track.stop());
+    if (recorder && recorder.state === 'recording') {
+      recorder.stop(); // Attempt to stop, though full processing might not complete
+    }
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
   });
 
   return {
