@@ -249,6 +249,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   const stopRecording = () => {
     if (recorder && recorder.state === 'recording') {
       recorder.stop();
+      globalStatusTextUpdater('Waiting for response...');
     } else {
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = undefined;

@@ -217,8 +217,6 @@ export default defineUnlistedScript(async () => {
 
         return;
       }
-      console.log(event);
-
       if (event.data.payload.type === 'sleeping') {
         voiceButtonApi.updateStateAfterResponse({ type: 'sleeping' });
       } else if (event.data.payload.type === 'error') {

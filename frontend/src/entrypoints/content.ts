@@ -60,7 +60,7 @@ async function speakTextInPage(text: string): Promise<void> {
         reject(event.error);
       };
 
-      console.log('[AlgoSync ContentScript] Speaking text:', text);
+      console.log('[AlgoSync Response] Speaking text:', text);
       window.speechSynthesis.speak(utterance);
     } catch (error) {
       console.error('[AlgoSync ContentScript] Error in speakTextInPage:', error);
@@ -96,7 +96,6 @@ export default defineContentScript({
             return result.prevProblemName;
           });
         if (prevProblemName !== audioRequest.problemName) {
-          console.log('New problem name detected, resetting conversation context.');
           await browser.storage.local.set({ prevProblemName: audioRequest.problemName });
           await browser.storage.local.set({ prevConversationParts: null });
         }
