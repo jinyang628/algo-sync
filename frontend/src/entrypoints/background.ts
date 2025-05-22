@@ -1,5 +1,12 @@
+import { HttpStatusCode } from 'axios';
+
+import { ApiKeyError, InvalidApiKeyError, MissingApiKeyError } from '@/lib/errors';
 import { getLlmApiUrl, getSystemPrompt } from '@/lib/llm';
-import { audioRequestActionSchema, textToSpeechRequestActionSchema } from '@/lib/types/audio';
+import {
+  apiKeyErrorSchema,
+  audioRequestActionSchema,
+  textToSpeechRequestActionSchema,
+} from '@/lib/types/audio';
 import { audioDataUrlToBase64 } from '@/lib/utils';
 
 async function sendTextToContentScriptForTTS(text: string) {
@@ -19,8 +26,22 @@ async function sendTextToContentScriptForTTS(text: string) {
   }
 }
 
+async function signalApiKeyErrorToContentScript(errorName: string) {
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (activeTab && activeTab.id) {
+      const apiKeyError = apiKeyErrorSchema.parse({ type: errorName });
+      chrome.tabs.sendMessage(activeTab.id, apiKeyError);
+    } else {
+      console.warn('[AlgoSync Background] No active tab found to send invalid API key to.');
+    }
+  } catch (error) {
+    console.error('[AlgoSync Background] Error querying active tab:', error);
+  }
+}
+
 export default defineBackground(() => {
-  chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener(async (request) => {
     if (audioRequestActionSchema.safeParse(request).success) {
       (async () => {
         try {
@@ -98,9 +119,15 @@ export default defineBackground(() => {
             const errorBody = await response
               .json()
               .catch(() => ({ error: { message: response.statusText } }));
-            throw new Error(
-              `Gemini API request failed with status ${response.status}: ${errorBody.error?.message || response.statusText}`,
-            );
+            if (response.status == HttpStatusCode.Forbidden) {
+              throw new MissingApiKeyError('Missing API Key');
+            } else if (response.status == HttpStatusCode.BadRequest) {
+              throw new InvalidApiKeyError('Invalid API Key');
+            } else {
+              throw new Error(
+                `Unexpected Gemini API request failed (${response.status}): ${errorBody.error?.message || response.statusText}`,
+              );
+            }
           }
 
           const data = await response.json();
@@ -127,14 +154,10 @@ export default defineBackground(() => {
           };
           await browser.storage.local.set({ prevConversationParts: updatedConversation });
           sendTextToContentScriptForTTS(assistantResponseText);
-
-          sendResponse({ success: true, response: assistantResponseText, ttsInitiated: true });
-        } catch (error: any) {
+        } catch (error) {
           console.error('[AlgoSync Background] Error processing audio request:', error);
-          if (error.name === 'AbortError') {
-            sendResponse({ success: false, error: 'Gemini API request timed out.' });
-          } else {
-            sendResponse({ success: false, error: error.message });
+          if (error instanceof ApiKeyError) {
+            signalApiKeyErrorToContentScript(error.name);
           }
         }
       })();

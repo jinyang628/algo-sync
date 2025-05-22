@@ -35,13 +35,18 @@ const MESSAGE_SLEEPING_HTML = `Click to start recording.<br>
     <span class="tooltip-text">${MESSAGE_SLEEPING_TOOLTIP}</span>
   </span> 
   in the editor.<br>`;
+const MESSAGE_MISSING_API_KEY_HTML = 'Please set your API key in the extension options.';
+const MESSAGE_INVALID_API_KEY_HTML =
+  'API Key is invalid. Please set a valid API key in the extension options.';
 const MESSAGE_WAITING = 'Processing audio... Please wait.';
 const MESSAGE_ERROR_GENERAL = 'An error occurred. Please try again.';
 const MESSAGE_ERROR_FILEREADER = 'Error reading audio data. Please try again.';
 const MESSAGE_ERROR_MEDIARECORDER_PREFIX = 'Recorder error: ';
 
 export interface VoiceButtonControlsAPI {
-  updateStateAfterResponse: (options: { type: 'sleeping' | 'error' }) => void;
+  updateStateAfterResponse: (options: {
+    type: 'sleeping' | 'error' | 'MissingApiKeyError' | 'InvalidApiKeyError';
+  }) => void;
 }
 
 interface CreateVoiceButtonReturn {
@@ -49,7 +54,13 @@ interface CreateVoiceButtonReturn {
   controls: VoiceButtonControlsAPI;
 }
 
-type RecorderState = 'sleeping' | 'recording' | 'waiting' | 'error';
+type RecorderState =
+  | 'sleeping'
+  | 'recording'
+  | 'waiting'
+  | 'MissingApiKeyError'
+  | 'InvalidApiKeyError'
+  | 'error';
 
 export function createVoiceButton(): CreateVoiceButtonReturn {
   let currentButtonState: RecorderState = 'sleeping';
@@ -144,7 +155,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   }
 
   function updateButtonAppearance() {
-    recordButton.disabled = false; // Default, override in specific states
+    recordButton.disabled = false;
     recordButton.classList.remove('pulsating');
     recordButton.style.animationName = '';
 
@@ -170,7 +181,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         recordButton.style.borderColor = THEME_COLOR_DARKER;
         recordButton.innerHTML = MIC_OFF_SVG;
         recordButton.style.color = WHITE_COLOR;
-        statusText.textContent = timerDisplay; // Updated by timerInterval
+        statusText.textContent = timerDisplay;
         recordButton.onmouseover = () => {
           recordButton.style.backgroundColor = THEME_COLOR;
         };
@@ -191,11 +202,22 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         break;
 
       case 'error':
+      case 'MissingApiKeyError':
+      case 'InvalidApiKeyError':
         recordButton.style.backgroundColor = WHITE_COLOR;
         recordButton.style.borderColor = WHITE_COLOR;
         recordButton.innerHTML = MIC_SVG;
         recordButton.style.color = THEME_COLOR;
-        statusText.textContent = MESSAGE_ERROR_GENERAL;
+        switch (currentButtonState) {
+          case 'MissingApiKeyError':
+            statusText.innerHTML = MESSAGE_MISSING_API_KEY_HTML;
+            break;
+          case 'InvalidApiKeyError':
+            statusText.innerHTML = MESSAGE_INVALID_API_KEY_HTML;
+            break;
+          default:
+            statusText.textContent = MESSAGE_ERROR_GENERAL;
+        }
         recordButton.onmouseover = () => {
           recordButton.style.backgroundColor = LIGHT_GRAY_HOVER_BG;
         };
@@ -276,9 +298,8 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       );
       if (audioChunks.length > 0) {
         currentButtonState = 'waiting';
-        updateButtonAppearance(); // Ensure UI reflects waiting state
+        updateButtonAppearance();
       } else {
-        // No audio and not properly in 'waiting' state, revert to sleeping
         currentButtonState = 'sleeping';
         updateButtonAppearance();
         recorder = null;
@@ -288,7 +309,6 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       }
     }
 
-    // If state is 'waiting' but no audio chunks, revert to sleeping.
     if (audioChunks.length === 0) {
       console.warn('[AlgoSync] No audio data recorded or chunks are empty in "waiting" state.');
       currentButtonState = 'sleeping';
@@ -299,7 +319,6 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       return;
     }
 
-    // Proceed with audio processing (state is 'waiting', button is disabled)
     const code: string = extractCodeFromWorkingContainer();
     const problemName: string = extractProblemNameFromUrl(window.location.href);
     const problemDescription: string = extractProblemDescription();
@@ -347,7 +366,6 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
       }
-      // If recorder exists but not 'recording' (e.g. 'inactive'), remove listeners
       if (recorder) {
         recorder.removeEventListener('dataavailable', handleDataAvailable);
         recorder.removeEventListener('stop', handleStop);
@@ -362,7 +380,6 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   };
 
   const startRecording = async () => {
-    // Clean up any previous state/resources
     if (recorder) {
       if (recorder.state === 'recording') recorder.stop(); // Should trigger handleStop eventually
       recorder.removeEventListener('dataavailable', handleDataAvailable);
@@ -392,7 +409,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       recorder.start();
       currentButtonState = 'recording';
       let seconds = 0;
-      updateButtonAppearance(); // Show "00:00" and recording UI
+      updateButtonAppearance();
 
       timerInterval = window.setInterval(() => {
         seconds++;
@@ -400,7 +417,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         if (currentButtonState === 'recording') {
           statusText.textContent = timerDisplay;
         } else {
-          clearInterval(timerInterval); // State changed, stop timer
+          clearInterval(timerInterval);
           timerInterval = undefined;
         }
       }, 1000);
@@ -410,7 +427,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
       }
-      currentButtonState = 'sleeping'; // Revert to sleeping after alert
+      currentButtonState = 'sleeping';
       updateButtonAppearance();
 
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -433,7 +450,6 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     } else if (currentButtonState === 'sleeping' || currentButtonState === 'error') {
       startRecording();
     }
-    // Button is disabled in 'waiting' state, so no click handling needed for it.
   });
 
   recordButton.addEventListener('mousedown', () => {
@@ -449,25 +465,26 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     }
   });
 
-  const _updateStateAndUIAfterResponse = (options: { type: 'sleeping' | 'error' }) => {
+  const _updateStateAndUIAfterResponse = (options: {
+    type: 'sleeping' | 'error' | 'MissingApiKeyError' | 'InvalidApiKeyError';
+  }) => {
     if (currentButtonState === 'recording') {
-      // Should ideally be 'waiting'
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = undefined;
     }
-    timerDisplay = '00:00'; // Reset for next potential recording
+    timerDisplay = '00:00';
     currentButtonState = options.type;
     updateButtonAppearance();
   };
 
-  updateButtonAppearance(); // Initial UI setup
+  updateButtonAppearance();
 
   voiceUIContainer.appendChild(recordButton);
   voiceUIContainer.appendChild(statusText);
 
   window.addEventListener('beforeunload', () => {
     if (recorder && recorder.state === 'recording') {
-      recorder.stop(); // Attempt to stop, though full processing might not complete
+      recorder.stop();
     }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());

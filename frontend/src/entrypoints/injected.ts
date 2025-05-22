@@ -267,18 +267,15 @@ export default defineUnlistedScript(async () => {
       return;
     }
     if (event.data && event.data.type === 'RECORD_BUTTON_STATUS_UPDATE') {
+      console.log('Received message:', event.data);
       if (!voiceButtonApi) {
         console.error('[AlgoSync Injected] Voice button API not initialized.');
 
         return;
       }
-      if (event.data.payload.type === 'sleeping') {
-        voiceButtonApi.updateStateAfterResponse({ type: 'sleeping' });
-      } else if (event.data.payload.type === 'error') {
-        voiceButtonApi.updateStateAfterResponse({ type: 'error' });
-      } else {
-        console.error('[AlgoSync Injected] Unknown payload type:', event.data.payload.type);
-      }
+      voiceButtonApi.updateStateAfterResponse({
+        type: event.data.payload.type,
+      });
     }
   });
 });

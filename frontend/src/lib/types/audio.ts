@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { INVALID_API_KEY_ERROR_NAME, MISSING_API_KEY_ERROR_NAME } from '@/lib/errors';
+
 export const audioRequestSchema = z.object({
   audioDataUrl: z.string(),
   code: z.string(),
@@ -21,3 +23,9 @@ export const textToSpeechRequestActionSchema = z.object({
 });
 
 export type TextToSpeechRequestAction = z.infer<typeof textToSpeechRequestActionSchema>;
+
+export const apiKeyErrorSchema = z.object({
+  type: z.enum([MISSING_API_KEY_ERROR_NAME, INVALID_API_KEY_ERROR_NAME]),
+});
+
+export type ApiKeyError = z.infer<typeof apiKeyErrorSchema>;
