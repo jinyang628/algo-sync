@@ -45,7 +45,7 @@ const MESSAGE_ERROR_MEDIARECORDER_PREFIX = 'Recorder error: ';
 
 export interface VoiceButtonControlsAPI {
   updateStateAfterResponse: (options: {
-    type: 'sleeping' | 'error' | 'MissingApiKeyError' | 'InvalidApiKeyError';
+    type: 'Sleeping' | 'Error' | 'MissingApiKeyError' | 'InvalidApiKeyError';
   }) => void;
 }
 
@@ -55,15 +55,15 @@ interface CreateVoiceButtonReturn {
 }
 
 type RecorderState =
-  | 'sleeping'
-  | 'recording'
-  | 'waiting'
+  | 'Sleeping'
+  | 'Recording'
+  | 'Waiting'
   | 'MissingApiKeyError'
   | 'InvalidApiKeyError'
-  | 'error';
+  | 'Error';
 
 export function createVoiceButton(): CreateVoiceButtonReturn {
-  let currentButtonState: RecorderState = 'sleeping';
+  let currentButtonState: RecorderState = 'Sleeping';
   let timerDisplay: string = '00:00';
   let recorder: MediaRecorder | null = null;
   let stream: MediaStream | null = null;
@@ -160,7 +160,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     recordButton.style.animationName = '';
 
     switch (currentButtonState) {
-      case 'sleeping':
+      case 'Sleeping':
         recordButton.style.backgroundColor = WHITE_COLOR;
         recordButton.style.borderColor = WHITE_COLOR;
         recordButton.innerHTML = MIC_SVG;
@@ -176,7 +176,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         };
         break;
 
-      case 'recording':
+      case 'Recording':
         recordButton.style.backgroundColor = THEME_COLOR_DARKER;
         recordButton.style.borderColor = THEME_COLOR_DARKER;
         recordButton.innerHTML = MIC_OFF_SVG;
@@ -190,7 +190,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         };
         break;
 
-      case 'waiting':
+      case 'Waiting':
         recordButton.style.backgroundColor = THEME_COLOR_DARKER;
         recordButton.style.borderColor = THEME_COLOR_DARKER;
         recordButton.innerHTML = MIC_OFF_SVG;
@@ -201,7 +201,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         recordButton.onmouseout = null;
         break;
 
-      case 'error':
+      case 'Error':
       case 'MissingApiKeyError':
       case 'InvalidApiKeyError':
         recordButton.style.backgroundColor = WHITE_COLOR;
@@ -250,12 +250,12 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     if (recorder) {
       recorder.removeEventListener('dataavailable', handleDataAvailable);
       recorder.removeEventListener('stop', handleStop);
-      recorder.removeEventListener('error', onRecorderError); // Remove self
+      recorder.removeEventListener('Error', onRecorderError); // Remove self
     }
     recorder = null;
     audioChunks = [];
 
-    currentButtonState = 'error';
+    currentButtonState = 'Error';
     updateButtonAppearance(); // Sets general error message
     statusText.textContent = `${MESSAGE_ERROR_MEDIARECORDER_PREFIX}${errorEvent.error?.message || 'Unknown error'}. Try again.`;
 
@@ -267,7 +267,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
 
   const handleStop = () => {
     // MediaRecorder 'stop' event handler
-    if (currentButtonState === 'error') {
+    if (currentButtonState === 'Error') {
       console.warn(
         "[AlgoSync] MediaRecorder 'stop' event handled when state was already 'error'. Ignoring.",
       );
@@ -292,15 +292,15 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       stream = null;
     }
 
-    if (currentButtonState !== 'waiting') {
+    if (currentButtonState !== 'Waiting') {
       console.warn(
         `[AlgoSync] MediaRecorder 'stop' event handled when state was '${currentButtonState}'.`,
       );
       if (audioChunks.length > 0) {
-        currentButtonState = 'waiting';
+        currentButtonState = 'Waiting';
         updateButtonAppearance();
       } else {
-        currentButtonState = 'sleeping';
+        currentButtonState = 'Sleeping';
         updateButtonAppearance();
         recorder = null;
         audioChunks = [];
@@ -310,8 +310,8 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     }
 
     if (audioChunks.length === 0) {
-      console.warn('[AlgoSync] No audio data recorded or chunks are empty in "waiting" state.');
-      currentButtonState = 'sleeping';
+      console.warn('[AlgoSync] No audio data recorded or chunks are empty in "Waiting" state.');
+      currentButtonState = 'Sleeping';
       updateButtonAppearance();
       recorder = null;
       audioChunks = [];
@@ -344,7 +344,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
     };
     reader.onerror = (error) => {
       console.error('[AlgoSync] FileReader error:', error);
-      currentButtonState = 'error';
+      currentButtonState = 'Error';
       updateButtonAppearance();
       statusText.textContent = MESSAGE_ERROR_FILEREADER;
     };
@@ -356,7 +356,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
 
   const stopRecording = () => {
     if (recorder && recorder.state === 'recording') {
-      currentButtonState = 'waiting';
+      currentButtonState = 'Waiting';
       updateButtonAppearance();
       recorder.stop();
     } else {
@@ -369,12 +369,12 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       if (recorder) {
         recorder.removeEventListener('dataavailable', handleDataAvailable);
         recorder.removeEventListener('stop', handleStop);
-        recorder.removeEventListener('error', onRecorderError);
+        recorder.removeEventListener('Error', onRecorderError);
       }
       recorder = null;
       audioChunks = [];
       timerDisplay = '00:00';
-      currentButtonState = 'sleeping';
+      currentButtonState = 'Sleeping';
       updateButtonAppearance();
     }
   };
@@ -407,14 +407,14 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       recorder.addEventListener('error', onRecorderError);
 
       recorder.start();
-      currentButtonState = 'recording';
+      currentButtonState = 'Recording';
       let seconds = 0;
       updateButtonAppearance();
 
       timerInterval = window.setInterval(() => {
         seconds++;
         timerDisplay = convertSecondsToTimer(seconds);
-        if (currentButtonState === 'recording') {
+        if (currentButtonState === 'Recording') {
           statusText.textContent = timerDisplay;
         } else {
           clearInterval(timerInterval);
@@ -427,7 +427,7 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
       }
-      currentButtonState = 'sleeping';
+      currentButtonState = 'Sleeping';
       updateButtonAppearance();
 
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -445,9 +445,9 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   };
 
   recordButton.addEventListener('click', () => {
-    if (currentButtonState === 'recording') {
+    if (currentButtonState === 'Recording') {
       stopRecording();
-    } else if (currentButtonState === 'sleeping' || currentButtonState === 'error') {
+    } else if (currentButtonState === 'Sleeping' || currentButtonState === 'Error') {
       startRecording();
     }
   });
@@ -466,9 +466,9 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
   });
 
   const _updateStateAndUIAfterResponse = (options: {
-    type: 'sleeping' | 'error' | 'MissingApiKeyError' | 'InvalidApiKeyError';
+    type: 'Sleeping' | 'Error' | 'MissingApiKeyError' | 'InvalidApiKeyError';
   }) => {
-    if (currentButtonState === 'recording') {
+    if (currentButtonState === 'Recording') {
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = undefined;
     }

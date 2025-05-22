@@ -73,7 +73,7 @@ export default defineContentScript({
             window.postMessage({
               type: 'RECORD_BUTTON_STATUS_UPDATE',
               payload: {
-                type: 'sleeping',
+                type: 'Sleeping',
               },
             });
           })
@@ -85,7 +85,7 @@ export default defineContentScript({
             window.postMessage({
               type: 'RECORD_BUTTON_STATUS_UPDATE',
               payload: {
-                type: 'error',
+                type: 'Error',
               },
             });
           });
