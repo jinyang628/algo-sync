@@ -2,6 +2,7 @@ import pushToGitHub from '@/lib/github';
 import { injectCustomScript } from '@/lib/inject';
 import { speakTextInPage } from '@/lib/speech';
 import {
+  apiKeyErrorSchema,
   audioRequestActionSchema,
   audioRequestSchema,
   textToSpeechRequestActionSchema,
@@ -54,13 +55,18 @@ export default defineContentScript({
           problemDescription: audioRequest.problemDescription,
         });
 
-        chrome.runtime.sendMessage(audioRequestAction);
+        await chrome.runtime.sendMessage(audioRequestAction);
       },
       false,
     );
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (textToSpeechRequestActionSchema.safeParse(request).success) {
+      if (apiKeyErrorSchema.safeParse(request).success) {
+        window.postMessage({
+          type: 'RECORD_BUTTON_STATUS_UPDATE',
+          payload: request,
+        });
+      } else if (textToSpeechRequestActionSchema.safeParse(request).success) {
         speakTextInPage(request.text)
           .then(() => {
             sendResponse({ success: true, message: 'TTS initiated by content script.' });
