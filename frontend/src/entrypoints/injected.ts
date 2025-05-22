@@ -3,18 +3,34 @@ import { THEME_COLOR, VoiceButtonControlsAPI, createVoiceButton } from '@/compon
 let currentResizeHandler: (() => void) | null = null;
 const HORIZONTAL_EDGE_OFFSET = '10px';
 const VERTICAL_EDGE_OFFSET = '50px';
-const ORIGINAL_CONTENT_OPACITY = '0.8'; // Opacity of the content area
-const GHOST_CONTENT_OPACITY = '0.1';   // Opacity of content area when ghosted
+const ORIGINAL_CONTENT_OPACITY = '0.8';
+const GHOST_CONTENT_OPACITY = '0.1';
 const GHOST_BUTTON_ID = 'algo-sync-ghost-button';
-const GHOST_BUTTON_AREA_HEIGHT = '25px'; // Space for the ghost button above content
+const GHOST_BUTTON_AREA_HEIGHT = '25px';
 
 export default defineUnlistedScript(async () => {
   let voiceButtonApi: VoiceButtonControlsAPI | null = null;
-  let draggableContainerRef: HTMLElement | null = null; // The main draggable fixed container
-  let contentContainerRef: HTMLElement | null = null; // The container for voice button, etc.
-  let adjustContainerLayout: (() => void) | null = null;
+  let draggableContainerRef: HTMLElement | null = null;
+  let contentContainerRef: HTMLElement | null = null;
   let ghostButtonElement: HTMLButtonElement | null = null;
   let isGhostMode = false;
+  let adjustLayoutCallback: (() => void) | null = null;
+
+  const updateGhostButtonHorizontalPosition = () => {
+    if (!draggableContainerRef || !ghostButtonElement) return;
+
+    const rect = draggableContainerRef.getBoundingClientRect();
+    const containerMidX = rect.left + rect.width / 2;
+    const screenMidX = window.innerWidth / 2;
+
+    if (containerMidX < screenMidX) {
+      ghostButtonElement.style.left = '5px';
+      ghostButtonElement.style.right = 'auto';
+    } else {
+      ghostButtonElement.style.right = '5px';
+      ghostButtonElement.style.left = 'auto';
+    }
+  };
 
   const toggleGhostMode = () => {
     if (!contentContainerRef || !ghostButtonElement || !draggableContainerRef) return;
@@ -52,7 +68,7 @@ export default defineUnlistedScript(async () => {
     draggableContainer.style.position = 'fixed';
     draggableContainer.style.top = VERTICAL_EDGE_OFFSET;
     draggableContainer.style.right = HORIZONTAL_EDGE_OFFSET;
-    draggableContainer.style.zIndex = '10000'; // Base z-index for the whole widget
+    draggableContainer.style.zIndex = '10000';
     draggableContainer.style.width = 'auto';
     draggableContainer.style.height = 'auto';
     draggableContainer.style.cursor = 'move';
@@ -61,9 +77,9 @@ export default defineUnlistedScript(async () => {
 
     const contentContainer = document.createElement('div');
     contentContainer.id = 'algo-sync-content-container';
-    contentContainer.style.position = 'relative'; // Needed for z-index to apply
-    contentContainer.style.zIndex = '2';          // Higher than ghost button
-    contentContainer.style.marginTop = GHOST_BUTTON_AREA_HEIGHT; // Create space for ghost button above
+    contentContainer.style.position = 'relative';
+    contentContainer.style.zIndex = '2';
+    contentContainer.style.marginTop = GHOST_BUTTON_AREA_HEIGHT;
     contentContainer.style.minWidth = '130px';
     contentContainer.style.maxWidth = '300px';
     contentContainer.style.height = 'auto';
@@ -87,9 +103,10 @@ export default defineUnlistedScript(async () => {
     ghostButtonElement.textContent = '👻';
     ghostButtonElement.title = 'Make container transparent and click-through';
     ghostButtonElement.style.position = 'absolute';
-    ghostButtonElement.style.zIndex = '1'; // Lower than contentContainer
-    ghostButtonElement.style.top = '5px';  // Position within draggableContainer's top area
+    ghostButtonElement.style.zIndex = '1';
+    ghostButtonElement.style.top = '5px';
     ghostButtonElement.style.right = '5px';
+    ghostButtonElement.style.left = 'auto';
     ghostButtonElement.style.background = 'rgba(255, 255, 255, 0.7)';
     ghostButtonElement.style.color = 'black';
     ghostButtonElement.style.border = '1px solid rgba(0,0,0,0.3)';
@@ -103,7 +120,7 @@ export default defineUnlistedScript(async () => {
       e.stopPropagation();
       toggleGhostMode();
     });
-    draggableContainer.appendChild(ghostButtonElement); // Appended to draggable, not content
+    draggableContainer.appendChild(ghostButtonElement);
     isGhostMode = false;
 
     let isDragging = false;
@@ -133,8 +150,8 @@ export default defineUnlistedScript(async () => {
     });
 
     function onMouseMove(e: MouseEvent) {
-      if (!isDragging || !draggableContainer) return;
-      const rect = draggableContainer.getBoundingClientRect();
+      if (!isDragging || !draggableContainerRef) return;
+      const rect = draggableContainerRef.getBoundingClientRect();
       const containerWidth = rect.width;
       const containerHeight = rect.height;
       const vw = window.innerWidth;
@@ -143,30 +160,17 @@ export default defineUnlistedScript(async () => {
       let newLeft = e.clientX - dragOffsetX;
       let newTop = e.clientY - dragOffsetY;
 
-      const visibleMargin = 30;
-      newLeft = Math.max(-containerWidth + visibleMargin, newLeft);
-      newLeft = Math.min(vw - visibleMargin, newLeft);
       newLeft = Math.max(0, newLeft);
       newLeft = Math.min(vw - containerWidth, newLeft);
-
       newTop = Math.max(0, newTop);
       newTop = Math.min(vh - containerHeight, newTop);
 
-      draggableContainer.style.left = `${newLeft}px`;
-      draggableContainer.style.top = `${newTop}px`;
-    }
-
-    function onMouseUp() {
-      isDragging = false;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      if (adjustContainerLayout) {
-        adjustContainerLayout();
-      }
+      draggableContainerRef.style.left = `${newLeft}px`;
+      draggableContainerRef.style.top = `${newTop}px`;
     }
 
     const adjustContainerOnResize = () => {
-      if (!draggableContainer || !document.body.contains(draggableContainer)) {
+      if (!draggableContainerRef || !document.body.contains(draggableContainerRef)) {
         if (currentResizeHandler) {
           window.removeEventListener('resize', currentResizeHandler);
           currentResizeHandler = null;
@@ -174,38 +178,52 @@ export default defineUnlistedScript(async () => {
         draggableContainerRef = null;
         contentContainerRef = null;
         ghostButtonElement = null;
-        adjustContainerLayout = null;
-        return;
+        adjustLayoutCallback = null;
+        
+return;
       }
-      const rect = draggableContainer.getBoundingClientRect();
+      const rect = draggableContainerRef.getBoundingClientRect();
       const containerWidth = rect.width;
       const containerHeight = rect.height;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      let currentTop = parseFloat(draggableContainer.style.top);
-      if (isNaN(currentTop)) currentTop = rect.top;
+      let currentTop = parseFloat(draggableContainerRef.style.top);
+      if (isNaN(currentTop) || draggableContainerRef.style.top === 'auto') currentTop = rect.top;
       const newTop = Math.min(Math.max(0, currentTop), vh - containerHeight);
-      draggableContainer.style.top = `${newTop}px`;
-      draggableContainer.style.bottom = 'auto';
-
-      let currentLeft = parseFloat(draggableContainer.style.left);
-      if (isNaN(currentLeft)) currentLeft = rect.left;
+      draggableContainerRef.style.top = `${newTop}px`;
+      draggableContainerRef.style.bottom = 'auto';
+      let currentLeft = parseFloat(draggableContainerRef.style.left);
+      if (isNaN(currentLeft) || draggableContainerRef.style.left === 'auto')
+        currentLeft = rect.left;
       const newLeft = Math.min(Math.max(0, currentLeft), vw - containerWidth);
-      draggableContainer.style.left = `${newLeft}px`;
-      draggableContainer.style.right = 'auto';
+      draggableContainerRef.style.left = `${newLeft}px`;
+      draggableContainerRef.style.right = 'auto';
+
+      updateGhostButtonHorizontalPosition();
     };
 
-    adjustContainerLayout = adjustContainerOnResize;
-    currentResizeHandler = adjustContainerLayout;
+    adjustLayoutCallback = adjustContainerOnResize;
+    currentResizeHandler = adjustLayoutCallback;
     window.addEventListener('resize', currentResizeHandler);
+
+    function onMouseUp() {
+      isDragging = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      if (adjustLayoutCallback) {
+        adjustLayoutCallback();
+      }
+    }
 
     const voiceButtonInstance = createVoiceButton();
     voiceButtonApi = voiceButtonInstance.controls;
     contentContainer.appendChild(voiceButtonInstance.element);
 
     document.body.appendChild(draggableContainer);
-    adjustContainerLayout();
+    if (adjustLayoutCallback) {
+      adjustLayoutCallback();
+    }
   };
 
   if (document.readyState === 'loading') {
@@ -215,7 +233,7 @@ export default defineUnlistedScript(async () => {
   }
 
   window.addEventListener('keydown', (event) => {
-    if (!draggableContainerRef || !adjustContainerLayout) {
+    if (!draggableContainerRef || !adjustLayoutCallback) {
       return;
     }
     if (event.ctrlKey && event.altKey) {
@@ -239,7 +257,7 @@ export default defineUnlistedScript(async () => {
       }
       if (moved) {
         event.preventDefault();
-        adjustContainerLayout();
+        adjustLayoutCallback();
       }
     }
   });
@@ -251,7 +269,8 @@ export default defineUnlistedScript(async () => {
     if (event.data && event.data.type === 'RECORD_BUTTON_STATUS_UPDATE') {
       if (!voiceButtonApi) {
         console.error('[AlgoSync Injected] Voice button API not initialized.');
-        return;
+        
+return;
       }
       if (event.data.payload.type === 'sleeping') {
         voiceButtonApi.updateStateAfterResponse({ type: 'sleeping' });
