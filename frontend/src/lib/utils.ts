@@ -24,7 +24,6 @@ export function identifyLanguage(): Language {
   if (!codeElement) {
     throw new Error('Code element not found');
   }
-  console.log(codeElement.className);
   const language: string = codeElement.className.split('-')[1];
   switch (language) {
     case 'python':
