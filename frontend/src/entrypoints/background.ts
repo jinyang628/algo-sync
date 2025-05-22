@@ -22,80 +22,91 @@ async function sendTextToContentScriptForTTS(text: string) {
 export default defineBackground(() => {
   chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     if (audioRequestActionSchema.safeParse(request).success) {
-      const prevConversationParts = await browser.storage.local
-        .get('prevConversationParts')
-        .then((result) => {
-          return result.prevConversationParts;
-        });
-
-      const base64AudioData = audioDataUrlToBase64(request.audioDataUrl);
-      const newParts = [
-        {
-          text: `User's code so far: ${request.code}`,
-        },
-        {
-          inlineData: {
-            mimeType: 'audio/webm',
-            data: base64AudioData,
-          },
-        },
-      ];
-
-      const mergedRequestBody =
-        prevConversationParts &&
-        prevConversationParts.contents &&
-        prevConversationParts.contents.length > 0
-          ? {
-              ...prevConversationParts,
-              contents: [
-                {
-                  parts: [...prevConversationParts.contents[0].parts, ...newParts],
-                },
-              ],
-              generationConfig: prevConversationParts.generationConfig,
-            }
-          : {
-              contents: [
-                {
-                  parts: [
-                    {
-                      text: getSystemPrompt(request.problemName, request.problemDescription),
-                    },
-                    ...newParts,
-                  ],
-                },
-              ],
-              generationConfig: { temperature: 0.1 },
-            };
-
-      const geminiApiKey: string = await browser.storage.sync.get('geminiApiKey').then((result) => {
-        return result.geminiApiKey;
-      });
-
-      console.log(mergedRequestBody);
-
-      console.log('[AlgoSync Background] Sending request to Gemini API...');
-      fetch(getLlmApiUrl(geminiApiKey), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(mergedRequestBody),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response.json().then((errorBody) => {
-              throw new Error(
-                `Gemini API request failed with status ${response.status}: ${errorBody.error?.message || response.statusText}`,
-              );
+      (async () => {
+        try {
+          const prevConversationParts = await browser.storage.local
+            .get('prevConversationParts')
+            .then((result) => {
+              return result.prevConversationParts;
             });
+
+          const base64AudioData = audioDataUrlToBase64(request.audioDataUrl);
+          const newParts = [
+            {
+              text: `User's code so far: ${request.code}`,
+            },
+            {
+              inlineData: {
+                mimeType: 'audio/webm',
+                data: base64AudioData,
+              },
+            },
+          ];
+
+          const mergedRequestBody =
+            prevConversationParts &&
+            prevConversationParts.contents &&
+            prevConversationParts.contents.length > 0
+              ? {
+                  ...prevConversationParts,
+                  contents: [
+                    {
+                      parts: [...prevConversationParts.contents[0].parts, ...newParts],
+                    },
+                  ],
+                  generationConfig: prevConversationParts.generationConfig,
+                }
+              : {
+                  contents: [
+                    {
+                      parts: [
+                        {
+                          text: getSystemPrompt(request.problemName, request.problemDescription),
+                        },
+                        ...newParts,
+                      ],
+                    },
+                  ],
+                  generationConfig: { temperature: 0.1 },
+                };
+
+          const geminiApiKey: string = await browser.storage.sync
+            .get('geminiApiKey')
+            .then((result) => {
+              return result.geminiApiKey;
+            });
+
+          console.log('[AlgoSync Background] Sending request to Gemini API...');
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => {
+            console.warn('[AlgoSync Background] Gemini API request timed out.');
+            controller.abort();
+          }, 120000); // 120 seconds timeout, adjust as needed
+
+          const response = await fetch(getLlmApiUrl(geminiApiKey), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(mergedRequestBody),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errorBody = await response
+              .json()
+              .catch(() => ({ error: { message: response.statusText } })); // Graceful fallback if error body isn't JSON
+            throw new Error(
+              `Gemini API request failed with status ${response.status}: ${errorBody.error?.message || response.statusText}`,
+            );
           }
 
-          return response.json();
-        })
-        .then(async (data) => {
-          let response = 'No response found.';
+          const data = await response.json();
 
+          let assistantResponseText = 'No response found.';
           if (
             data.candidates &&
             data.candidates[0] &&
@@ -103,10 +114,10 @@ export default defineBackground(() => {
             data.candidates[0].content.parts &&
             data.candidates[0].content.parts[0]
           ) {
-            response = data.candidates[0].content.parts[0].text;
+            assistantResponseText = data.candidates[0].content.parts[0].text;
           }
 
-          const assistantParts = [{ text: response }];
+          const assistantParts = [{ text: assistantResponseText }];
           const updatedConversation = {
             ...mergedRequestBody,
             contents: [
@@ -116,28 +127,21 @@ export default defineBackground(() => {
             ],
           };
           await browser.storage.local.set({ prevConversationParts: updatedConversation });
+          sendTextToContentScriptForTTS(assistantResponseText);
 
-          try {
-            await sendTextToContentScriptForTTS(response);
-            sendResponse({ success: true, response: response, ttsInitiated: true });
-          } catch (ttsError: any) {
-            sendResponse({
-              success: true,
-              response: response,
-              ttsInitiated: false,
-              ttsError: ttsError.message,
-            });
+          sendResponse({ success: true, response: assistantResponseText, ttsInitiated: true });
+        } catch (error: any) {
+          console.error('[AlgoSync Background] Error processing audio request:', error);
+          if (error.name === 'AbortError') {
+            sendResponse({ success: false, error: 'Gemini API request timed out.' });
+          } else {
+            sendResponse({ success: false, error: error.message });
           }
-        })
-        .catch((error) => {
-          console.error('[AlgoSync Background] Error calling Gemini API:', error);
-          sendResponse({ success: false, error: error.message });
-        });
+        }
+      })();
 
       return true;
     } else {
-      console.error('[AlgoSync Background] Received unknown message:', request);
-
       return false;
     }
   });

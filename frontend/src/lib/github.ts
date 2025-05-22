@@ -4,10 +4,6 @@ import { BRANCH, REPO_NAME, REPO_OWNER } from '@/lib/constants';
 
 const GITHUB_API_URL = 'https://api.github.com';
 
-interface TreeItem {
-  path: string;
-  type: string;
-}
 export default async function pushToGitHub(
   fileName: string,
   fileContent: string,
@@ -35,7 +31,6 @@ export default async function pushToGitHub(
       },
     );
     const latestCommitSha = refData.object.sha;
-    console.log('Latest commit SHA:', latestCommitSha);
 
     // Step 2: Get the latest commit details
     const { data: commitData } = await axios.get(
@@ -45,20 +40,6 @@ export default async function pushToGitHub(
       },
     );
     const baseTreeSha = commitData.tree.sha;
-    console.log('Base tree SHA:', baseTreeSha);
-
-    // Step 3: Get the current tree to check if the file exists
-    const { data: currentTreeData } = await axios.get(
-      `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/trees/${baseTreeSha}?recursive=1`,
-      {
-        headers: headers,
-      },
-    );
-
-    // Check if the file already exists in the current tree
-    const existingFile = currentTreeData.tree.find(
-      (item: TreeItem) => item.path === fileName && item.type === 'blob',
-    );
 
     // Step 4: Create a new tree
     const tree = [
@@ -69,13 +50,6 @@ export default async function pushToGitHub(
         content: fileContent,
       },
     ];
-
-    // If the file exists, include it in the tree with the new content
-    if (existingFile) {
-      console.log(`File "${fileName}" already exists. Updating content...`);
-    } else {
-      console.log(`File "${fileName}" does not exist. Creating new file...`);
-    }
 
     const { data: treeData } = await axios.post(
       `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/trees`,
@@ -88,9 +62,7 @@ export default async function pushToGitHub(
       },
     );
     const newTreeSha = treeData.sha;
-    console.log('New tree SHA:', newTreeSha);
 
-    // Step 5: Create a new commit
     const { data: commitResponse } = await axios.post(
       `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/commits`,
       {
@@ -103,11 +75,8 @@ export default async function pushToGitHub(
       },
     );
     const newCommitSha = commitResponse.sha;
-    console.log('New commit SHA:', newCommitSha);
 
-    // Step 6: Update the branch reference
     try {
-      // First try without force
       await axios.patch(
         `${GITHUB_API_URL}/repos/${REPO_OWNER}/${REPO_NAME}/git/refs/heads/${BRANCH}`,
         {

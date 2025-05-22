@@ -256,8 +256,8 @@ export function createVoiceButton(): CreateVoiceButtonReturn {
       stream = null;
       recorder = null;
       audioChunks = [];
-      
-return;
+
+      return;
     }
 
     if (timerInterval) {
@@ -283,8 +283,8 @@ return;
         updateButtonAppearance();
         recorder = null;
         audioChunks = [];
-        
-return;
+
+        return;
       }
     }
 
@@ -295,8 +295,8 @@ return;
       updateButtonAppearance();
       recorder = null;
       audioChunks = [];
-      
-return;
+
+      return;
     }
 
     // Proceed with audio processing (state is 'waiting', button is disabled)
