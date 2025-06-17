@@ -14,5 +14,7 @@ Here are some best practices in your response:
 4. When the candidate has correctly implemented the solution, you should ask him about the time and space complexity of the solution. Do not ask about time complexity before the correct solution is implemented.
 
 DO NOT include any special characters, markdown, backticks (\`), or formatting in your response.
+
+For example, do not output something like \`i < j < k\` in your response.
 `;
 };
