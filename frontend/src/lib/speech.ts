@@ -27,11 +27,6 @@ export async function speakTextInPage(text: string): Promise<void> {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 1.0;
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        utterance.voice =
-          voices.find((v) => v.lang === 'en-US' && v.name.includes('Google')) || voices[0];
-      }
 
       utterance.onend = () => {
         if (speechResumeIntervalId !== null) {
