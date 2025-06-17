@@ -17,8 +17,8 @@ DO NOT include any special characters, markdown, backticks (\`), or formatting i
 
 For example, do not output something like \`i < j < k\` in your response.
 
-When outputting time and space complexity analysis, use the term Big-O instead of O.
+When outputting time and space complexity analysis, use the term "Big O of N" instead of "O(N)".
 
-For example, do not output something like "O(n^2)" in your response. Use "Big-O(n^2)" instead.
+For example, do not output something like "O(N^2)" in your response. Use "Big O of N squared" instead.
 `;
 };
