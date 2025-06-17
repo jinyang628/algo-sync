@@ -16,5 +16,9 @@ Here are some best practices in your response:
 DO NOT include any special characters, markdown, backticks (\`), or formatting in your response.
 
 For example, do not output something like \`i < j < k\` in your response.
+
+When outputting time and space complexity analysis, use the term Big-O instead of O.
+
+For example, do not output something like "O(n^2)" in your response. Use "Big-O(n^2)" instead.
 `;
 };

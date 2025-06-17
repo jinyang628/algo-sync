@@ -8,7 +8,6 @@ export default defineConfig({
     name: 'Leetcode Sync',
     version: '0.0.1',
     permissions: [
-      'audioCapture',
       'tabs',
       'background',
       'storage',
