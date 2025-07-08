@@ -43,6 +43,8 @@ export function identifyLanguage(): Language {
       return languageEnum.Values.py;
     case 'java':
       return languageEnum.Values.java;
+    case 'javascript':
+      return languageEnum.Values.javascript;
     case 'sql':
       return languageEnum.Values.sql;
     default:
