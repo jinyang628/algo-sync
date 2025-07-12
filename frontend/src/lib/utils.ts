@@ -1,8 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-import { Language, languageEnum } from '@/lib/types/languages';
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -26,30 +24,6 @@ export function isSubmissionAccepted(): boolean {
   console.log('Submission result element found!');
 
   return true;
-}
-
-export function identifyLanguage(): Language {
-  const codeContainer = document.querySelector('div[class="group relative"][translate="no"]');
-  if (!codeContainer) {
-    throw new Error('Code container not found');
-  }
-  const codeElement = codeContainer.querySelector('code');
-  if (!codeElement) {
-    throw new Error('Code element not found');
-  }
-  const language: string = codeElement.className.split('-')[1];
-  switch (language) {
-    case 'python':
-      return languageEnum.Values.py;
-    case 'java':
-      return languageEnum.Values.java;
-    case 'javascript':
-      return languageEnum.Values.javascript;
-    case 'sql':
-      return languageEnum.Values.sql;
-    default:
-      throw new Error(`Unsupported language: ${language}`);
-  }
 }
 
 export function extractProblemNameFromUrl(url: string): string {

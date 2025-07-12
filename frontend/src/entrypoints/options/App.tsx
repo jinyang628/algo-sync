@@ -1,4 +1,4 @@
-import { FaGithub } from 'react-icons/fa';
+import { FaGithub, FaLanguage } from 'react-icons/fa';
 
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle } from 'lucide-react';
@@ -7,10 +7,17 @@ import { XCircle } from 'lucide-react';
 import Loader from '@/components/shared/loader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/toaster';
 
 import { getAccessToken, isAccessTokenValid } from '@/lib/auth';
+import { languageEnum } from '@/lib/types/languages';
 
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
 
@@ -18,6 +25,7 @@ export default function App() {
   const [clientId, setClientId] = useState<string>('');
   const [clientSecret, setClientSecret] = useState<string>('');
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('Select a language');
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
   const authenticationIcon = (status: AuthenticationStatus) => {
     switch (status) {
@@ -43,6 +51,9 @@ export default function App() {
       });
       browser.storage.sync.get('geminiApiKey').then((result) => {
         setGeminiApiKey(result.geminiApiKey || '');
+      });
+      browser.storage.sync.get('selectedLanguage').then((result) => {
+        setSelectedLanguage(result.selectedLanguage || 'Select a language');
       });
       try {
         const accessToken: string = await browser.storage.sync
@@ -81,6 +92,31 @@ export default function App() {
     handleGitHubCallback();
   }, []);
 
+  const languageDropdown = (
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <Button className="w-[150px]">
+          <FaLanguage className="size-5" />
+          <p>{selectedLanguage}</p>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={() => setSelectedLanguage(languageEnum.Values.Python)}>
+          Python
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setSelectedLanguage(languageEnum.Values.Javascript)}>
+          JavaScript
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setSelectedLanguage(languageEnum.Values.Java)}>
+          Java
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setSelectedLanguage(languageEnum.Values.Sql)}>
+          SQL
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const authenticateSection = (
     <div className="flex items-center justify-center space-x-2">
       <Button
@@ -109,6 +145,9 @@ export default function App() {
         });
         browser.storage.sync.set({
           geminiApiKey: geminiApiKey,
+        });
+        browser.storage.sync.set({
+          selectedLanguage: selectedLanguage,
         });
         toast({
           title: 'Settings saved!',
@@ -146,6 +185,7 @@ export default function App() {
             value={geminiApiKey}
             placeholder="Enter your Gemini API Key"
           />
+          {languageDropdown}
           {authenticateSection}
           {saveButton}
         </Card>

@@ -7,11 +7,10 @@ import {
   audioRequestSchema,
   textToSpeechRequestActionSchema,
 } from '@/lib/types/audio';
-import { Language as LanguageSuffix } from '@/lib/types/languages';
+import { Language, languageSuffixMap } from '@/lib/types/languages';
 import {
   extractCodeFromAcceptedSubmissionContainer,
   extractProblemNameFromUrl,
-  identifyLanguage as identifyLanguageSuffix,
   isSubmissionAccepted,
 } from '@/lib/utils';
 
@@ -103,7 +102,9 @@ export default defineContentScript({
         observer.disconnect();
         const problemName: string = extractProblemNameFromUrl(window.location.href);
         const code: string = extractCodeFromAcceptedSubmissionContainer();
-        const languageSuffix: LanguageSuffix = identifyLanguageSuffix();
+        const languageSuffix: string = await browser.storage.sync
+          .get('selectedLanguage')
+          .then((result) => languageSuffixMap[result.selectedLanguage as Language]);
         await pushToGitHub(
           `${problemName}.${languageSuffix}`,
           code,
