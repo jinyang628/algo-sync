@@ -3,6 +3,7 @@ import os
 import aiohttp
 from dotenv import load_dotenv
 from fastapi import HTTPException
+import httpx
 
 load_dotenv()
 
@@ -28,7 +29,7 @@ class UsersService:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(GITHUB_TOKEN_URL, data=data, headers=headers) as response:
-                    if response.status != 200:
+                    if response.status != httpx.codes.OK:
                         raise HTTPException(
                             status_code=response.status,
                             detail="Failed to exchange code for access token",
@@ -39,13 +40,13 @@ class UsersService:
 
                     if not access_token:
                         raise HTTPException(
-                            status_code=400,
+                            status_code=httpx.codes.BAD_REQUEST,
                             detail="Access token not found in response",
                         )
 
                     return access_token
         except Exception as e:
             raise HTTPException(
-                status_code=500,
+                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
                 detail=f"An unexpected error occurred: {str(e)}",
             )
