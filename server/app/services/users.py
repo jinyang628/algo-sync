@@ -4,8 +4,6 @@ import aiohttp
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
-from app.models.users import AuthenticateResponse
-
 load_dotenv()
 
 SERVER_BASE_URL = os.getenv("SERVER_BASE_URL")
@@ -16,7 +14,7 @@ GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
 
 class UsersService:
-    async def exchange_token(self, code: str) -> AuthenticateResponse:
+    async def exchange_token(self, code: str) -> str:
         data = {
             "client_id": GITHUB_CLIENT_ID,
             "client_secret": GITHUB_CLIENT_SECRET,
@@ -45,9 +43,7 @@ class UsersService:
                             detail="Access token not found in response",
                         )
 
-                    return AuthenticateResponse(
-                        access_token=access_token,
-                    )
+                    return access_token
         except Exception as e:
             raise HTTPException(
                 status_code=500,

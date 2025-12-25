@@ -29,13 +29,13 @@ class UsersController:
         @router.get("/callback")
         async def exchange_token(code: str):
             try:
-                token_response: AuthenticateResponse = await self.users_service.exchange_token(
+                access_token: str = await self.users_service.exchange_token(
                     code=code
                 )
                 one_time_code = secrets.token_urlsafe()
                 await self.redis_service.set(
                     key=f"auth:one_time:{one_time_code}",
-                    value=token_response.access_token,
+                    value=access_token,
                     expire=60,
                 )
 
