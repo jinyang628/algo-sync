@@ -45,8 +45,6 @@ jobs:
         working-directory: ./server
         run: |
           poetry install --no-interaction --no-root
-          poetry run playwright install
-          poetry run playwright install-deps
 
     #   - name: Run pytest
     #     working-directory: ./server
