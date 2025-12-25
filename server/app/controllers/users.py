@@ -32,7 +32,7 @@ class UsersController:
                 token_response: AuthenticateResponse = await self.users_service.exchange_token(
                     code=code
                 )
-                one_time_code = secrets.token_urlsafe(32)
+                one_time_code = secrets.token_urlsafe()
                 await self.redis_service.set(
                     key=f"auth:one_time:{one_time_code}",
                     value=token_response.access_token,
