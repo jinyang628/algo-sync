@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routers.v1 import v1_router
+from app.services.redis import RedisService
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.basicConfig(
@@ -17,18 +18,22 @@ log = logging.getLogger(__name__)
 
 log.addHandler(logging.StreamHandler())
 
+redis_service = RedisService()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Entry point lifecycle event. Runs before the server starts"""
     try:
         log.info("Starting up server...")
+        await redis_service.connect()
         yield
     except Exception as e:
         log.exception("Failed to initialize renpAI server: %s", e)
         raise e
     finally:
         log.info("Shutting down server...")
+        await redis_service.disconnect()
 
 
 def create_app() -> FastAPI:

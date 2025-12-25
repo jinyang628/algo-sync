@@ -14,6 +14,13 @@ poetry install
 eval "$(poetry env activate)"
 ```
 
+## Installing Redis for Mac local development
+
+```bash
+brew install redis
+brew services start redis
+```
+
 ## Set up environment variables
 
 ```bash
