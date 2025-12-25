@@ -9,3 +9,11 @@ class AuthenticateRequest(BaseModel):
 
 class AuthenticateResponse(BaseModel):
     access_token: str
+
+
+class TokenExchangeRequest(BaseModel):
+    code: str
+
+
+class TokenExchangeResponse(BaseModel):
+    access_token: str

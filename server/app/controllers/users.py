@@ -4,9 +4,11 @@ import os
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
+import secrets
 
 from app.models.users import AuthenticateResponse
 from app.services.users import UsersService
+from app.services.redis import RedisService
 
 log = logging.getLogger(__name__)
 load_dotenv()
@@ -16,9 +18,10 @@ router = APIRouter()
 
 
 class UsersController:
-    def __init__(self, service: UsersService):
+    def __init__(self, service: UsersService, redis_service: RedisService):
         self.router = APIRouter()
         self.service = service
+        self.redis_service = redis_service
         self.setup_routes()
 
     def setup_routes(self):
@@ -28,13 +31,37 @@ class UsersController:
         async def exchange_token(code: str):
             try:
                 token_response: AuthenticateResponse = await self.service.exchange_token(code=code)
-
-                return RedirectResponse(
-                    f"{FRONTEND_BASE_URL}?access_token={token_response.access_token}"
+                one_time_code = secrets.token_urlsafe(32)
+                await self.redis_service.set(
+                    key=f"auth:one_time:{one_time_code}",
+                    value=token_response.access_token,
+                    expire=60,
                 )
+
+                return RedirectResponse(f"{FRONTEND_BASE_URL}?code={one_time_code}")
             except HTTPException as e:
                 raise e
             except Exception as e:
+                log.error(f"Error in callback: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"An unexpected error occurred: {str(e)}",
+                )
+
+        @router.post("/token/exchange")
+        async def exchange_one_time_code(request: TokenExchangeRequest):
+            try:
+                token = await self.redis_service.get(f"auth:one_time:{request.code}")
+                if not token:
+                    raise HTTPException(status_code=400, detail="Invalid or expired code")
+                await self.redis_service.delete(f"auth:one_time:{request.code}")
+
+                return TokenExchangeResponse(access_token=token)
+
+            except HTTPException as e:
+                raise e
+            except Exception as e:
+                log.error(f"Error exchanging code: {e}")
                 raise HTTPException(
                     status_code=500,
                     detail=f"An unexpected error occurred: {str(e)}",
