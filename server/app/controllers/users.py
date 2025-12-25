@@ -6,9 +6,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 import secrets
 
-from app.models.users import AuthenticateResponse
-from app.services.users import UsersService
-from app.services.redis import RedisService
+from app.models.users import AuthenticateResponse, TokenExchangeRequest, TokenExchangeResponse
+from app.services import UsersService, RedisService
 
 log = logging.getLogger(__name__)
 load_dotenv()
@@ -18,9 +17,9 @@ router = APIRouter()
 
 
 class UsersController:
-    def __init__(self, service: UsersService, redis_service: RedisService):
+    def __init__(self, users_service: UsersService, redis_service: RedisService):
         self.router = APIRouter()
-        self.service = service
+        self.users_service = users_service
         self.redis_service = redis_service
         self.setup_routes()
 
@@ -30,7 +29,9 @@ class UsersController:
         @router.get("/callback")
         async def exchange_token(code: str):
             try:
-                token_response: AuthenticateResponse = await self.service.exchange_token(code=code)
+                token_response: AuthenticateResponse = await self.users_service.exchange_token(
+                    code=code
+                )
                 one_time_code = secrets.token_urlsafe(32)
                 await self.redis_service.set(
                     key=f"auth:one_time:{one_time_code}",
