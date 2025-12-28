@@ -3,12 +3,12 @@ import logging
 from fastapi import APIRouter
 
 from app.controllers.users import UsersController
-from app.services.users import UsersService
+from app.services import RedisService, UsersService
 
 log = logging.getLogger(__name__)
 
 v1_router = APIRouter(prefix="/api/v1")
-
+redis_service = RedisService()
 
 ### Health check
 
@@ -24,8 +24,8 @@ async def status():
 
 
 def get_users_controller_router():
-    service = UsersService()
-    return UsersController(service=service).router
+    users_service = UsersService()
+    return UsersController(users_service=users_service, redis_service=redis_service).router
 
 
 v1_router.include_router(

@@ -5,7 +5,7 @@ lint:
 	cd frontend && pnpm eslint . --fix
 	cd server && poetry run black .
 	cd server && poetry run isort .
-	cd server && poetry run autoflake --in-place --remove-all-unused-imports --recursive .
+	cd server && poetry run autoflake --in-place --recursive .
 
 start-frontend:
 	cd frontend && pnpm dev

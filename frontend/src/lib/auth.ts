@@ -2,21 +2,13 @@ import { StatusCodes } from 'http-status-codes';
 
 import { SERVER_BASE_URL } from '@/lib/constants';
 
-interface StoreAuthTokensProps {
-  clientId: string;
-}
-
-export async function getAccessToken({ clientId }: StoreAuthTokensProps) {
+export async function redirectToGithub() {
   try {
-    const authUrl = new URL('https://github.com/login/oauth/authorize');
-    authUrl.searchParams.append('client_id', clientId);
-    authUrl.searchParams.append('redirect_uri', `${SERVER_BASE_URL}/api/v1/users/callback`);
-    authUrl.searchParams.append('scope', 'user repo public_repo');
-    console.log('Auth URL:', authUrl);
-    window.location.href = authUrl.toString();
+    const response = await fetch(`${SERVER_BASE_URL}/api/v1/users/login-url`);
+    const { url } = await response.json();
+    window.location.href = url;
   } catch (error) {
-    console.error('Error getting auth tokens:', error as Error);
-    throw new Error('Failed to authenticate with Github');
+    console.error('Failed to get auth URL:', error);
   }
 }
 

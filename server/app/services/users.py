@@ -1,22 +1,22 @@
 import os
 
 import aiohttp
+import httpx
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
-from app.models.users import AuthenticateResponse
+from app.constants import GITHUB_TOKEN_URL
 
 load_dotenv()
 
 SERVER_BASE_URL = os.getenv("SERVER_BASE_URL")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
-GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
 
 class UsersService:
-    async def exchange_token(self, code: str) -> AuthenticateResponse:
+
+    async def exchange_code_for_access_token(self, code: str) -> str:
         data = {
             "client_id": GITHUB_CLIENT_ID,
             "client_secret": GITHUB_CLIENT_SECRET,
@@ -30,7 +30,7 @@ class UsersService:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(GITHUB_TOKEN_URL, data=data, headers=headers) as response:
-                    if response.status != 200:
+                    if response.status != httpx.codes.OK:
                         raise HTTPException(
                             status_code=response.status,
                             detail="Failed to exchange code for access token",
@@ -41,15 +41,13 @@ class UsersService:
 
                     if not access_token:
                         raise HTTPException(
-                            status_code=400,
+                            status_code=httpx.codes.BAD_REQUEST,
                             detail="Access token not found in response",
                         )
 
-                    return AuthenticateResponse(
-                        access_token=access_token,
-                    )
+                    return access_token
         except Exception as e:
             raise HTTPException(
-                status_code=500,
+                status_code=httpx.codes.INTERNAL_SERVER_ERROR,
                 detail=f"An unexpected error occurred: {str(e)}",
             )

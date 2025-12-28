@@ -1,11 +1,13 @@
 from pydantic import BaseModel
 
 
-class AuthenticateRequest(BaseModel):
-    client_id: str
-    client_secret: str
+class TokenExchangeRequest(BaseModel):
     code: str
 
 
-class AuthenticateResponse(BaseModel):
+class TokenExchangeResponse(BaseModel):
     access_token: str
+
+
+class LoginUrlResponse(BaseModel):
+    url: str
