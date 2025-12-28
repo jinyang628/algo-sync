@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from upstash_redis import Redis
+from upstash_redis.asyncio import Redis
 
 log = logging.getLogger(__name__)
 
