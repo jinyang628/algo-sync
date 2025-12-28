@@ -6,30 +6,15 @@ import httpx
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
+from app.constants import GITHUB_TOKEN_URL
+
 load_dotenv()
 
 SERVER_BASE_URL = os.getenv("SERVER_BASE_URL")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-GITHUB_AUTH_URL = "https://github.com/login/oauth/authorize"
-GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
-
-class UsersService:
-
-    async def get_authorization_url(self):
-        state = secrets.token_urlsafe()
-
-        await self.redis_service.set(key=f"auth:state:{state}", value="valid")
-
-        params = {
-            "client_id": GITHUB_CLIENT_ID,
-            "redirect_uri": f"{os.getenv('SERVER_BASE_URL')}/api/v1/users/callback",
-            "scope": "user repo public_repo",
-            "state": state,
-        }
-        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-        return f"{self.github_auth_url}?{query_string}"
+class UsersService:        
 
     async def exchange_code_for_access_token(self, code: str) -> str:
         data = {

@@ -9,11 +9,16 @@ from fastapi.responses import RedirectResponse
 
 from app.models.users import LoginUrlResponse, TokenExchangeRequest, TokenExchangeResponse
 from app.services import RedisService, UsersService
+from app.constants import GITHUB_AUTH_URL
 
 log = logging.getLogger(__name__)
 load_dotenv()
 
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL")
+SERVER_BASE_URL = os.getenv("SERVER_BASE_URL")
+GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
+
+
 router = APIRouter()
 
 
@@ -29,8 +34,18 @@ class UsersController:
 
         @router.get("/login-url")
         async def get_login_url() -> LoginUrlResponse:
-            url = await self.users_service.get_authorization_url()
-            return LoginUrlResponse(url=url)
+            state = secrets.token_urlsafe()
+
+            await self.redis_service.set(key=f"auth:state:{state}", value="valid")
+
+            params = {
+                "client_id": GITHUB_CLIENT_ID,
+                "redirect_uri": f"{SERVER_BASE_URL}/api/v1/users/callback",
+                "scope": "user repo public_repo",
+                "state": state,
+            }
+            query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+            return LoginUrlResponse(url=f"{GITHUB_AUTH_URL}?{query_string}")
 
         @router.get("/callback")
         async def oauth_callback(code: str, state: str):
