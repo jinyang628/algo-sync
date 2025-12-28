@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter
 
 from app.controllers.users import UsersController
-from app.services import UsersService, RedisService
+from app.services import RedisService, UsersService
 
 log = logging.getLogger(__name__)
 

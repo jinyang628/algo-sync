@@ -2,10 +2,6 @@ import { StatusCodes } from 'http-status-codes';
 
 import { SERVER_BASE_URL } from '@/lib/constants';
 
-interface StoreAuthTokensProps {
-  clientId: string;
-}
-
 export async function redirectToGithub(clientId: string) {
   try {
     // Generate a random state for security

@@ -1,16 +1,14 @@
 import logging
 import os
-
-from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import RedirectResponse
 import secrets
 
 import httpx
+from dotenv import load_dotenv
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import RedirectResponse
 
 from app.models.users import TokenExchangeRequest, TokenExchangeResponse
-from app.services import UsersService, RedisService
-from app.constants import REDIS_ACCESS_TOKEN_EXPIRATION_SECONDS
+from app.services import RedisService, UsersService
 
 log = logging.getLogger(__name__)
 load_dotenv()

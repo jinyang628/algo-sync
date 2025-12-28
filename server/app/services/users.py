@@ -1,9 +1,9 @@
 import os
 
 import aiohttp
+import httpx
 from dotenv import load_dotenv
 from fastapi import HTTPException
-import httpx
 
 load_dotenv()
 

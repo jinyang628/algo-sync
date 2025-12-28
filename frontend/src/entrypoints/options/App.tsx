@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/toaster';
 
-import { redirectToGithub, isAccessTokenValid } from '@/lib/auth';
+import { isAccessTokenValid, redirectToGithub } from '@/lib/auth';
 import { languageEnum } from '@/lib/types/languages';
 
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
