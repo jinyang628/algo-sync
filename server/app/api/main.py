@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routers.v1 import v1_router
 from app.services.redis import RedisService
+from app.constants import CHROME_EXTENSION_ID
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.basicConfig(
@@ -45,7 +46,7 @@ def create_app() -> FastAPI:
         # TODO: This is a quick fix to bypass CORS error. We need to ensure that the origin is shared in production
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=[CHROME_EXTENSION_ID],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
