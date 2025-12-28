@@ -1,5 +1,4 @@
 import os
-import secrets
 
 import aiohttp
 import httpx
@@ -14,7 +13,8 @@ SERVER_BASE_URL = os.getenv("SERVER_BASE_URL")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 
-class UsersService:        
+
+class UsersService:
 
     async def exchange_code_for_access_token(self, code: str) -> str:
         data = {

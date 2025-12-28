@@ -22,8 +22,6 @@ import { languageEnum } from '@/lib/types/languages';
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
 
 export default function App() {
-  const [clientId, setClientId] = useState<string>('');
-  const [clientSecret, setClientSecret] = useState<string>('');
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('Select a language');
   const [authenticationStatus, setAuthenticationStatus] = useState<AuthenticationStatus>('loading');
@@ -43,12 +41,6 @@ export default function App() {
 
   useEffect(() => {
     const initializeStates = async () => {
-      browser.storage.sync.get('clientId').then((result) => {
-        setClientId(result.clientId || '');
-      });
-      browser.storage.sync.get('clientSecret').then((result) => {
-        setClientSecret(result.clientSecret || '');
-      });
       browser.storage.sync.get('geminiApiKey').then((result) => {
         setGeminiApiKey(result.geminiApiKey || '');
       });
@@ -121,10 +113,9 @@ export default function App() {
     <div className="flex items-center justify-center space-x-2">
       <Button
         className="gap-2"
-        disabled={!clientId}
         onClick={() => {
           setAuthenticationStatus('loading');
-          redirectToGithub({ clientId: clientId });
+          redirectToGithub();
         }}
       >
         <FaGithub className="size-5" />
@@ -137,12 +128,6 @@ export default function App() {
   const saveButton = (
     <Button
       onClick={() => {
-        browser.storage.sync.set({
-          clientId: clientId,
-        });
-        browser.storage.sync.set({
-          clientSecret: clientSecret,
-        });
         browser.storage.sync.set({
           geminiApiKey: geminiApiKey,
         });
@@ -164,20 +149,6 @@ export default function App() {
       <Toaster />
       <div className="mx-auto flex max-h-[600px] w-full max-w-[750px] flex-col justify-center space-y-4 p-4">
         <Card className="mx-auto flex w-full max-w-[auto] flex-col justify-center space-y-4 p-4 align-middle">
-          <p className="text-base font-semibold">Github OAuth App Client ID:</p>
-          <Input
-            type="password"
-            onChange={(e) => setClientId(e.target.value)}
-            value={clientId}
-            placeholder="Enter your Github OAuth App's Client ID"
-          />
-          <p className="text-base font-semibold">Github OAuth App Client Secret:</p>
-          <Input
-            type="password"
-            onChange={(e) => setClientSecret(e.target.value)}
-            value={clientSecret}
-            placeholder="Enter your Github OAuth App's Client Secret"
-          />
           <p className="text-base font-semibold">Gemini API Key:</p>
           <Input
             type="password"

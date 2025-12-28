@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { SERVER_BASE_URL } from '@/lib/constants';
 
-export async function redirectToGithub(clientId: string) {
+export async function redirectToGithub() {
   try {
     const response = await fetch(`${SERVER_BASE_URL}/api/v1/users/login-url`);
     const { url } = await response.json();

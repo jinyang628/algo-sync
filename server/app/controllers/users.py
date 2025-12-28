@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 
+from app.constants import GITHUB_AUTH_URL
 from app.models.users import LoginUrlResponse, TokenExchangeRequest, TokenExchangeResponse
 from app.services import RedisService, UsersService
-from app.constants import GITHUB_AUTH_URL
 
 log = logging.getLogger(__name__)
 load_dotenv()
