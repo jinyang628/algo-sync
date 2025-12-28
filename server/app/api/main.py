@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.routers.v1 import v1_router
-from app.services.redis import RedisService
+from app.services.redis import redis_service
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.basicConfig(
@@ -18,9 +18,6 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 log.addHandler(logging.StreamHandler())
-
-redis_service = RedisService()
-
 
 raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]

@@ -43,3 +43,6 @@ class RedisService:
         if not self.client:
             raise RuntimeError("Redis client not initialized")
         return await self.client.exists(key) > 0
+
+
+redis_service: RedisService = RedisService()
