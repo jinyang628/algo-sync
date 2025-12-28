@@ -30,38 +30,39 @@ class UsersController:
         router = self.router
 
         @router.get("/callback")
-        async def exchange_token(code: str):
+        async def oauth_callback(code: str, state: str):
+            """
+            This is where GitHub redirects the user.
+            'code' is the temporary exchange code.
+            """
             try:
-                access_token: str = await self.users_service.exchange_token(code=code)
+                access_token = await self.users_service.exchange_code_for_access_token(code=code)
                 one_time_code = secrets.token_urlsafe()
                 await self.redis_service.set(
-                    key=f"auth:one_time:{one_time_code}",
+                    key=f"auth:otc:{one_time_code}",
                     value=access_token,
-                    expire=REDIS_ACCESS_TOKEN_EXPIRATION_SECONDS,
                 )
 
-                return RedirectResponse(f"{FRONTEND_BASE_URL}?code={one_time_code}")
-            except HTTPException as e:
-                raise e
+                # Redirect user back to frontend with the one time code, which will be posted back in /token/exchange
+                return RedirectResponse(f"{FRONTEND_BASE_URL}/auth/callback?otc={one_time_code}")
+
             except Exception as e:
-                log.error(f"Error in callback: {e}")
-                raise HTTPException(
-                    status_code=httpx.codes.INTERNAL_SERVER_ERROR,
-                    detail=f"An unexpected error occurred: {str(e)}",
-                )
+                log.error(f"OAuth callback failed: {e}")
+                return RedirectResponse(f"{FRONTEND_BASE_URL}/login?error=auth_failed")
 
         @router.post("/token/exchange")
         async def exchange_one_time_code(request: TokenExchangeRequest):
             try:
-                token = await self.redis_service.get(f"auth:one_time:{request.code}")
-                if not token:
+                redis_key = f"auth:otc:{request.code}"
+                github_token = await self.redis_service.get(redis_key)
+
+                if not github_token:
                     raise HTTPException(
-                        status_code=httpx.codes.BAD_REQUEST, detail="Invalid or expired code"
+                        status_code=httpx.codes.BAD_REQUEST,
+                        detail="Invalid or expired exchange code",
                     )
-                await self.redis_service.delete(f"auth:one_time:{request.code}")
-
-                return TokenExchangeResponse(access_token=token)
-
+                await self.redis_service.delete(redis_key)
+                return TokenExchangeResponse(access_token=github_token)
             except HTTPException as e:
                 raise e
             except Exception as e:

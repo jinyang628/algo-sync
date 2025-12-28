@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/toaster';
 
-import { getAccessToken, isAccessTokenValid } from '@/lib/auth';
+import { redirectToGithub, isAccessTokenValid } from '@/lib/auth';
 import { languageEnum } from '@/lib/types/languages';
 
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
@@ -124,7 +124,7 @@ export default function App() {
         disabled={!clientId}
         onClick={() => {
           setAuthenticationStatus('loading');
-          getAccessToken({ clientId: clientId });
+          redirectToGithub({ clientId: clientId });
         }}
       >
         <FaGithub className="size-5" />

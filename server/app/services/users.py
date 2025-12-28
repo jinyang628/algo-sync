@@ -15,7 +15,7 @@ GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
 
 class UsersService:
-    async def exchange_token(self, code: str) -> str:
+    async def exchange_code_for_access_token(self, code: str) -> str:
         data = {
             "client_id": GITHUB_CLIENT_ID,
             "client_secret": GITHUB_CLIENT_SECRET,
