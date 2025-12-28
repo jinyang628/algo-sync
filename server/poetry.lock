@@ -960,6 +960,21 @@ files = [
 ]
 
 [[package]]
+name = "upstash-redis"
+version = "1.5.0"
+description = "Serverless Redis SDK from Upstash"
+optional = false
+python-versions = "<4.0,>=3.8"
+groups = ["main"]
+files = [
+    {file = "upstash_redis-1.5.0-py3-none-any.whl", hash = "sha256:e08de1f74d3fb48a81b383c00398cc9336c43b65b82e6d9266312143970800b9"},
+    {file = "upstash_redis-1.5.0.tar.gz", hash = "sha256:1917d4d009ca803815092892d92c7da9138b4ada6b353974fb74caf063c6d2a3"},
+]
+
+[package.dependencies]
+httpx = ">=0.23.0,<1"
+
+[[package]]
 name = "uvicorn"
 version = "0.34.0"
 description = "The lightning-fast ASGI server."
@@ -1077,5 +1092,5 @@ propcache = ">=0.2.0"
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.12"
-content-hash = "a991334d804fb4dfbad9b4ef30d267fe20e288535666c4bfda35496c6f78eeb7"
+python-versions = ">=3.12,<4.0"
+content-hash = "67c7fff351c780e2e42dac1b3d32a889fdcafb4e0cc4bcacf3661d90f6c10b47"

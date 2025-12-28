@@ -1,26 +1,22 @@
 import logging
-import os
 from typing import Optional
 
-import redis.asyncio as redis
+from upstash_redis import Redis
 
 log = logging.getLogger(__name__)
 
 
 class RedisService:
     def __init__(self):
-        self.redis_url = os.getenv("REDIS_URL")
-        self.client: Optional[redis.Redis] = None
+        self.client: Optional[Redis] = None
 
     async def connect(self):
-        if not self.redis_url:
-            raise ValueError("REDIS_URL environment variable is not set")
         try:
-            self.client = redis.from_url(self.redis_url, encoding="utf-8", decode_responses=True)
+            self.client = Redis.from_env()
             await self.client.ping()
-            log.info(f"Connected to Redis successfully at {self.redis_url}")
+            log.info(f"Connected to Redis successfully")
         except Exception as e:
-            log.error(f"Failed to connect to Redis at {self.redis_url}: {e}")
+            log.error(f"Failed to connect to Redis: {e}")
             raise
 
     async def disconnect(self):
