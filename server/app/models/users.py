@@ -7,3 +7,7 @@ class TokenExchangeRequest(BaseModel):
 
 class TokenExchangeResponse(BaseModel):
     access_token: str
+
+
+class LoginUrlResponse(BaseModel):
+    url: str

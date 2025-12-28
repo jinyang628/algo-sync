@@ -1,4 +1,5 @@
 import os
+import secrets
 
 import aiohttp
 import httpx
@@ -15,6 +16,21 @@ GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 
 
 class UsersService:
+
+    async def get_authorization_url(self):
+        state = secrets.token_urlsafe()
+
+        await self.redis_service.set(key=f"auth:state:{state}", value="valid")
+
+        params = {
+            "client_id": GITHUB_CLIENT_ID,
+            "redirect_uri": f"{os.getenv('SERVER_BASE_URL')}/api/v1/users/callback",
+            "scope": "user repo public_repo",
+            "state": state,
+        }
+        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+        return f"{self.github_auth_url}?{query_string}"
+
     async def exchange_code_for_access_token(self, code: str) -> str:
         data = {
             "client_id": GITHUB_CLIENT_ID,

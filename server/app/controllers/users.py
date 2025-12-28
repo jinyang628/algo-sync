@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 
-from app.models.users import TokenExchangeRequest, TokenExchangeResponse
+from app.models.users import LoginUrlResponse, TokenExchangeRequest, TokenExchangeResponse
 from app.services import RedisService, UsersService
 
 log = logging.getLogger(__name__)
@@ -27,6 +27,11 @@ class UsersController:
     def setup_routes(self):
         router = self.router
 
+        @router.get("/login-url")
+        async def get_login_url() -> LoginUrlResponse:
+            url = await self.users_service.get_authorization_url()
+            return LoginUrlResponse(url=url)
+
         @router.get("/callback")
         async def oauth_callback(code: str, state: str):
             """
@@ -34,6 +39,15 @@ class UsersController:
             'code' is the temporary exchange code.
             """
             try:
+                state_key = f"auth:state:{state}"
+                is_valid_state = await self.redis_service.get(state_key)
+                if not is_valid_state:
+                    raise HTTPException(
+                        status_code=httpx.codes.FORBIDDEN,
+                        detail="Invalid state parameter. Possible CSRF attack.",
+                    )
+                await self.redis_service.delete(state_key)
+
                 access_token = await self.users_service.exchange_code_for_access_token(code=code)
                 one_time_code = secrets.token_urlsafe()
                 await self.redis_service.set(
