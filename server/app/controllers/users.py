@@ -71,16 +71,16 @@ class UsersController:
                 )
 
                 # Redirect user back to frontend with the one time code, which will be posted back in /token/exchange
-                return RedirectResponse(f"{FRONTEND_BASE_URL}/auth/callback?otc={one_time_code}")
+                return RedirectResponse(f"{FRONTEND_BASE_URL}?otc={one_time_code}")
 
             except Exception as e:
                 log.error(f"OAuth callback failed: {e}")
-                return RedirectResponse(f"{FRONTEND_BASE_URL}/login?error=auth_failed")
+                return RedirectResponse(f"{FRONTEND_BASE_URL}?error=auth_failed")
 
         @router.post("/token/exchange")
         async def exchange_one_time_code(request: TokenExchangeRequest):
             try:
-                redis_key = f"auth:otc:{request.code}"
+                redis_key = f"auth:otc:{request.otc}"
                 github_token = await self.redis_service.get(redis_key)
 
                 if not github_token:
