@@ -16,7 +16,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/toaster';
 
-import { isAccessTokenValid, redirectToGithub } from '@/lib/auth';
+import { exchangeOneTimeCode, isAccessTokenValid, redirectToGithub } from '@/lib/auth';
+import {
+  ExchangeOneTimeCodeRequest,
+  ExchangeOneTimeCodeResponse,
+  exchangeOneTimeCodeRequestSchema,
+} from '@/lib/types/auth';
 import { languageEnum } from '@/lib/types/languages';
 
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
@@ -69,18 +74,24 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handleGitHubCallback = () => {
+    const handleGitHubCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token');
+      const otc = urlParams.get('otc');
 
-      if (!accessToken) {
-        return;
+      if (!otc) return;
+
+      try {
+        const exchangeRequest = exchangeOneTimeCodeRequestSchema.parse({ otc });
+        const response = await exchangeOneTimeCode(exchangeRequest);
+        await browser.storage.sync.set({ accessToken: response.access_token });
+        setAuthenticationStatus('yes');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (error) {
+        console.error('Failed to exchange one-time code:', error);
+        setAuthenticationStatus('error');
       }
-      browser.storage.sync.set({ accessToken }).then(() => {
-        console.log('Access token saved.');
-      });
-      window.location.href = '/options.html';
     };
+
     handleGitHubCallback();
   }, []);
 

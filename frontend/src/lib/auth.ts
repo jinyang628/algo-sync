@@ -2,6 +2,12 @@ import { StatusCodes } from 'http-status-codes';
 
 import { SERVER_BASE_URL } from '@/lib/constants';
 
+import {
+  ExchangeOneTimeCodeRequest,
+  ExchangeOneTimeCodeResponse,
+  exchangeOneTimeCodeResponseSchema,
+} from './types/auth';
+
 export async function redirectToGithub() {
   try {
     const response = await fetch(`${SERVER_BASE_URL}/api/v1/users/login-url`);
@@ -10,6 +16,26 @@ export async function redirectToGithub() {
   } catch (error) {
     console.error('Failed to get auth URL:', error);
   }
+}
+
+export async function exchangeOneTimeCode(
+  exchangeRequest: ExchangeOneTimeCodeRequest,
+): Promise<ExchangeOneTimeCodeResponse> {
+  const response = await fetch(`${SERVER_BASE_URL}/api/v1/users/token/exchange`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ code: exchangeRequest.otc }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || 'Failed to exchange token');
+  }
+
+  const data = await response.json();
+  return exchangeOneTimeCodeResponseSchema.parse(data);
 }
 
 export async function isAccessTokenValid(accessToken: string): Promise<boolean> {
