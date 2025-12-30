@@ -82,6 +82,7 @@ export default function App() {
         const response = await exchangeOneTimeCode(exchangeRequest);
         await browser.storage.sync.set({ accessToken: response.access_token });
         setAuthenticationStatus('yes');
+        console.log('Successfully obtained access token');
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (error) {
         console.error('Failed to exchange one-time code:', error);
