@@ -10,6 +10,7 @@ import {
 
 export async function redirectToGithub() {
   try {
+    console.log('Redirecting to GitHub...');
     const response = await fetch(`${SERVER_BASE_URL}/api/v1/users/login-url`);
     const { url } = await response.json();
     window.location.href = url;
