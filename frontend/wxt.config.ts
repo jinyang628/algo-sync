@@ -17,7 +17,11 @@ export default defineConfig({
       'scripting',
       'tabCapture',
     ],
-    host_permissions: ['*://leetcode.com/*'],
+    host_permissions: [
+      '*://leetcode.com/*',
+      'https://algo-sync.onrender.com/*',
+      'https://api.github.com/*',
+    ],
     background: {
       service_worker: 'background.js',
       persistent: true,
@@ -33,7 +37,15 @@ export default defineConfig({
         resources: ['icon/*.png', 'images/*.svg', 'images/*.png', 'injected.js'],
         matches: ['*://*/*'],
       },
+      {
+        resources: ['options.html'],
+        matches: ['https://algo-sync.onrender.com/*'],
+      },
     ],
+    content_security_policy: {
+      extension_pages:
+        "script-src 'self'; object-src 'self'; connect-src 'self' https://algo-sync.onrender.com https://api.github.com",
+    },
   },
   modules: ['@wxt-dev/module-react', '@wxt-dev/i18n/module'],
   srcDir: 'src',

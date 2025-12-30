@@ -17,11 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/toaster';
 
 import { exchangeOneTimeCode, isAccessTokenValid, redirectToGithub } from '@/lib/auth';
-import {
-  ExchangeOneTimeCodeRequest,
-  ExchangeOneTimeCodeResponse,
-  exchangeOneTimeCodeRequestSchema,
-} from '@/lib/types/auth';
+import { exchangeOneTimeCodeRequestSchema } from '@/lib/types/auth';
 import { languageEnum } from '@/lib/types/languages';
 
 type AuthenticationStatus = 'no' | 'yes' | 'loading' | 'error';
@@ -79,6 +75,7 @@ export default function App() {
       const otc = urlParams.get('otc');
 
       if (!otc) return;
+      console.log('Exchanging one-time code...');
 
       try {
         const exchangeRequest = exchangeOneTimeCodeRequestSchema.parse({ otc });

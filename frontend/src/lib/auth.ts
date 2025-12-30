@@ -27,7 +27,7 @@ export async function exchangeOneTimeCode(
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ code: exchangeRequest.otc }),
+    body: JSON.stringify({ otc: exchangeRequest.otc }),
   });
 
   if (!response.ok) {
